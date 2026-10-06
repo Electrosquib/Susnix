@@ -6,16 +6,30 @@ if [[ $EUID -ne 0 ]]; then
     exit 1
 fi
 
-read -rp "Hostname [susnix]: " HOSTNAME
-HOSTNAME="${HOSTNAME:-susnix}"
+HOSTNAME="${SUSNIX_HOSTNAME:-}"
+USERNAME="${SUSNIX_USERNAME:-}"
+TIMEZONE="${SUSNIX_TIMEZONE:-}"
 
-read -rp "Username: " USERNAME
-while [[ -z "$USERNAME" ]]; do
-    read -rp "Username cannot be empty: " USERNAME
-done
+if [[ -z "$HOSTNAME" ]]; then
+    read -rp "Hostname [susnix]: " HOSTNAME
+    HOSTNAME="${HOSTNAME:-susnix}"
+fi
 
-read -rp "Timezone [UTC]: " TIMEZONE
-TIMEZONE="${TIMEZONE:-UTC}"
+if [[ -z "$USERNAME" ]]; then
+    read -rp "Username: " USERNAME
+    while [[ -z "$USERNAME" ]]; do
+        read -rp "Username cannot be empty: " USERNAME
+    done
+fi
+
+if [[ -z "$TIMEZONE" ]]; then
+    read -rp "Timezone [UTC]: " TIMEZONE
+    TIMEZONE="${TIMEZONE:-UTC}"
+fi
+
+
+
+
 
 LOCALE="en_US.UTF-8"
 
