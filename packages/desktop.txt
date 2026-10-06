@@ -1,0 +1,15 @@
+mesa
+hyprland
+foot
+pipewire
+pipewire-pulse
+pipewire-jack
+wireplumber
+xorg-xwayland
+xdg-desktop-portal-hyprland
+waybar
+wofi
+mako
+wl-clipboard
+grim
+slurp

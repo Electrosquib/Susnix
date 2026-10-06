@@ -1,0 +1,9 @@
+base-devel
+git
+sudo
+networkmanager
+openssh
+curl
+wget
+nano
+vim
