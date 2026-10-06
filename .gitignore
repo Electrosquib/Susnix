@@ -1,0 +1,8 @@
+*.log
+*.iso
+*.img
+*.qcow2
+*.vdi
+build/
+work/
+out/
