@@ -41,11 +41,24 @@ install -m 0644 -o "$TARGET_USER" -g "$TARGET_GROUP" \
     "$REPO_DIR/configs/hypr/hyprland.lua" \
     "$HOME_DIR/.config/hypr/hyprland.lua"
 
+# Keep the existing copy-based config installation model.
+install -d -m 0755 -o "$TARGET_USER" -g "$TARGET_GROUP" \
+    "$HOME_DIR/.config/quickshell/susnix"
+while IFS= read -r -d '' config_file; do
+    relative_path="${config_file#"$REPO_DIR/configs/quickshell/"}"
+    install -D -m 0644 -o "$TARGET_USER" -g "$TARGET_GROUP" \
+        "$config_file" "$HOME_DIR/.config/quickshell/susnix/$relative_path"
+done < <(find "$REPO_DIR/configs/quickshell" -type f ! -name 'README.md' -print0)
+
 if [[ "$VM_MODE" == true ]]; then
     mapfile -t VM_PKGS < <(grep -Ev '^[[:space:]]*(#|$)' "$REPO_DIR/packages/vm.txt")
 
     "${PACMAN[@]}" -S --needed --noconfirm "${VM_PKGS[@]}"
-    "${SYSTEMCTL[@]}" enable vboxservice
+    if [[ $EUID -eq 0 ]]; then
+        bash "$REPO_DIR/scripts/setup-vm-display.sh" --install-only
+    else
+        sudo bash "$REPO_DIR/scripts/setup-vm-display.sh" --install-only
+    fi
     "${SYSTEMCTL[@]}" enable sshd
 fi
 

@@ -1,0 +1,15 @@
+[Unit]
+Description=Susnix VirtualBox guest display resizing
+ConditionVirtualization=oracle
+ConditionPathExists=/dev/vboxguest
+After=vboxservice.service
+Wants=vboxservice.service
+
+[Service]
+Type=forking
+ExecStart=/usr/bin/VBoxDRMClient
+Restart=on-failure
+RestartSec=2
+
+[Install]
+WantedBy=multi-user.target

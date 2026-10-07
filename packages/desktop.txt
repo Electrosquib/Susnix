@@ -8,6 +8,7 @@ wireplumber
 xorg-xwayland
 xdg-desktop-portal-hyprland
 waybar
+quickshell
 wofi
 mako
 wl-clipboard
