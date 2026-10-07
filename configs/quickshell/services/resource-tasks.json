@@ -1,0 +1,65 @@
+{
+    "tasks": [
+        {
+            "id": "dev",
+            "name": "Dev",
+            "category": "dev",
+            "match": [
+                "python",
+                "code",
+                "vim",
+                "nvim",
+                "gcc",
+                "clang",
+                "rustc",
+                "cargo",
+                "node",
+                "make",
+                "git",
+                "foot",
+                "kitty"
+            ]
+        },
+        {
+            "id": "browser",
+            "name": "Browser",
+            "category": "browser",
+            "match": [
+                "firefox",
+                "chromium",
+                "chrome",
+                "brave",
+                "vivaldi"
+            ]
+        },
+        {
+            "id": "ai",
+            "name": "AI",
+            "category": "ai",
+            "match": [
+                "ollama",
+                "llama",
+                "chatgpt"
+            ]
+        },
+        {
+            "id": "media",
+            "name": "Media",
+            "category": "media",
+            "match": [
+                "mpv",
+                "vlc",
+                "spotify",
+                "obs",
+                "pipewire"
+            ]
+        },
+        {
+            "id": "system",
+            "name": "System",
+            "category": "system",
+            "match": []
+        }
+    ],
+    "assignments": {}
+}

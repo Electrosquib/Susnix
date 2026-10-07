@@ -1,0 +1,22 @@
+{
+    "colors": {
+        "background": "#050509",
+        "backgroundRaised": "#0B0B12",
+        "surface": "#11111A",
+        "surfaceRaised": "#1A1A26",
+        "primary": "#A5A9FF",
+        "secondary": "#796AE8",
+        "accent": "#D978D8",
+        "text": "#EAEAF4",
+        "textMuted": "#88879F",
+        "border": "#38364F",
+        "success": "#87C8B0",
+        "warning": "#D9C286",
+        "danger": "#DC7B96",
+        "dev": "#A5A9FF",
+        "browser": "#AC8BE8",
+        "ai": "#83C7CA",
+        "media": "#D978D8",
+        "system": "#858597"
+    }
+}

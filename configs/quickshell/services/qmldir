@@ -1,0 +1,4 @@
+singleton SystemStats 1.0 SystemStats.qml
+singleton TaskService 1.0 TaskService.qml
+singleton ResourceMonitor 1.0 ResourceMonitor.qml
+singleton LauncherService 1.0 LauncherService.qml

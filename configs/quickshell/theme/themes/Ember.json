@@ -1,0 +1,22 @@
+{
+    "colors": {
+        "background": "#110805",
+        "backgroundRaised": "#1C0F09",
+        "surface": "#24130C",
+        "surfaceRaised": "#321D12",
+        "primary": "#FF993E",
+        "secondary": "#FF554F",
+        "accent": "#FFD166",
+        "text": "#FFF0E3",
+        "textMuted": "#AE8A76",
+        "border": "#70442A",
+        "success": "#9BD779",
+        "warning": "#FFD166",
+        "danger": "#FF554F",
+        "dev": "#FF993E",
+        "browser": "#FF776D",
+        "ai": "#E3C17D",
+        "media": "#FFB35C",
+        "system": "#A88B7A"
+    }
+}

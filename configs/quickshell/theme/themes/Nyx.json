@@ -1,0 +1,39 @@
+{
+    "colors": {
+        "background": "#050711",
+        "backgroundRaised": "#090D1B",
+        "surface": "#0C1122",
+        "surfaceRaised": "#11182D",
+        "primary": "#00C8FF",
+        "secondary": "#654CFF",
+        "accent": "#F12BD8",
+        "text": "#E4ECFF",
+        "textMuted": "#7483A6",
+        "border": "#24447A",
+        "success": "#00E8BC",
+        "warning": "#FFD166",
+        "danger": "#FF426C",
+        "dev": "#00B8FF",
+        "browser": "#8155FF",
+        "ai": "#00DFD0",
+        "media": "#F43BC4",
+        "system": "#64708D"
+    },
+    "effects": {
+        "opacityGlass": 0.9,
+        "opacityPanel": 0.94,
+        "opacityBackdrop": 0.45,
+        "opacityInactive": 0.65,
+        "opacityDisabled": 0.4,
+        "opacityBorder": 0.65,
+        "opacityGlow": 0.08,
+        "opacityHover": 0.12,
+        "blurRadius": 8,
+        "glowStrength": 0.65,
+        "borderWidth": 1,
+        "cornerRadius": 3,
+        "animationFast": 150,
+        "animationNormal": 280,
+        "animationDropdown": 220
+    }
+}
