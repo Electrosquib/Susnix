@@ -34,6 +34,13 @@ class LauncherBackend(unittest.TestCase):
         self.assertEqual(backend.search('%_Ω')['files'][0]['name'],'100%_Ω.md')
         self.assertFalse(any('.git' in x['path'] for x in backend.search('radar')['files']))
         (root/'SFCW.py').unlink();self.assertEqual(backend.search('SFCW')['files'],[])
+    def test_index_refreshes_when_search_roots_change(self):
+        (self.directory/'Projects/radar/old.py').write_text('x')
+        self.assertEqual(len(backend.search('old.py')['files']),1)
+        other=self.directory/'Other';other.mkdir();(other/'new.py').write_text('x')
+        with patch.dict(os.environ,{'SUSNIX_LAUNCHER_ROOTS':str(other)}):
+            self.assertEqual(backend.search('old.py')['files'],[])
+            self.assertEqual(backend.search('new.py')['files'][0]['path'],str(other/'new.py'))
     def test_index_enforces_limit_inside_a_large_directory(self):
         root=self.directory/'Projects/radar'
         for number in range(20):(root/str(number)).write_text('x')

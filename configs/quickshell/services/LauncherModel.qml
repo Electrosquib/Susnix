@@ -109,12 +109,13 @@ Item {
         monitor=output;query="";files=[];notice="";backdropReady=false;backdrop="";
         capture.running=false;Qt.callLater(()=>capture.running=true);captureTimeout.restart();DesktopService.refresh();
     }
-    function search(term: string): void {query=term;files=[];searcher.running=false;searchDelay.restart();}
+    function cancelSearch(): void {query="";files=[];notice="";indexLimited=false;searchDelay.stop();searcher.running=false;}
+    function search(term: string): void {query=term.trim();notice="";files=[];searcher.running=false;searchDelay.restart();}
     function info(item: var): void {
         infoId=item.id;appInfo={};metadata.running=false;
         metadata.command=["python",helper,JSON.stringify({action:"info",id:item.id,command:item.entry?item.entry.command:[]})];Qt.callLater(()=>metadata.running=true);
     }
-    function run(data: var): void {if(action.running){notice="An action is already running.";return;}notice="";action.command=["python",helper,JSON.stringify(data)];action.running=true;}
+    function run(data: var): bool {if(action.running){notice="An action is already running.";return false;}notice="";action.command=["python",helper,JSON.stringify(data)];action.running=true;return true;}
     function open(item: var): void {
         if(item.kind==="app"){
             if(item.id==="susnix:files"){remember(item);DesktopState.openFolder(DesktopState.home);}
@@ -133,20 +134,20 @@ Item {
     function askAi(prompt: string): void {
         if(!webAvailable())return;
         // The existing assistant is a placeholder; carry the request to the web AI.
-        run({action:"copy-path",path:prompt});Quickshell.execDetached(["xdg-open","https://chatgpt.com/?q="+encodeURIComponent(prompt)]);DesktopState.launcherOpen=false;
+        if(!run({action:"copy-path",path:prompt}))return;Quickshell.execDetached(["xdg-open","https://chatgpt.com/?q="+encodeURIComponent(prompt)]);DesktopState.launcherOpen=false;
     }
     function appAction(item: var,mode: string): void {
         if(mode==="pin"){togglePin(item.id);return;}
         if(mode==="info"){info(item);return;}
         if(!item.entry)return;
         const args=mode==="root"?(item.entry.categories.includes("TerminalEmulator")?["bash","-l"]:item.entry.command):LauncherService.commandFor(item.entry);
-        run({action:mode,command:args,workspace:2});remember(item);DesktopState.launcherOpen=false;
+        if(!run({action:mode,command:args,workspace:2}))return;remember(item);DesktopState.launcherOpen=false;
     }
     function fileAction(item: var,mode: string): void {
         if(mode==="copy-path"){run({action:mode,path:item.path});return;}
         if(mode==="code"){if(!LauncherService.editFile(item.path)){notice="No editor installed.";return;}remember(item);}
         else if(mode==="folder"){DesktopState.openFolder(item.isDir?item.path:item.path.slice(0,item.path.lastIndexOf("/"))||"/");}
-        else if(mode==="run-file"){run({action:mode,path:item.path});}
+        else if(mode==="run-file"){if(!run({action:mode,path:item.path}))return;}
         else if(mode==="ai"){if(!webAvailable())return;aiContext.command=["python",helper,JSON.stringify({action:"ai-context",path:item.path})];aiContext.running=true;return;}
         DesktopState.launcherOpen=false;
     }
@@ -154,9 +155,9 @@ Item {
         if(id.startsWith("theme:")){ThemeManager.select(id.slice(6));notice="Theme applied";return;}
         if(id==="terminal")DesktopState.terminalHere(DesktopState.folderPath);
         else if(id==="radar-code"){if(!LauncherService.editFile(Quickshell.env("HOME")+"/Radar")){notice="No editor installed.";return;}}
-        else if(id==="radar-workspace")run({action:"workspace",workspace:2,command:[Quickshell.env("HOME")+"/.local/bin/susnix-terminal","--working-directory",Quickshell.env("HOME")+"/Radar"]});
+        else if(id==="radar-workspace"){if(!run({action:"workspace",workspace:2,command:[Quickshell.env("HOME")+"/.local/bin/susnix-terminal","--working-directory",Quickshell.env("HOME")+"/Radar"]}))return;}
         else if(id==="bluetooth-off"){if(DesktopService.adapter)DesktopService.adapter.enabled=false;else {notice="No Bluetooth adapter available.";return;}}
-        else run({action:id});
+        else if(!run({action:id}))return;
         DesktopState.launcherOpen=false;
     }
     Connections {target:DesktopState;function onLauncherOpenChanged(): void {if(!DesktopState.launcherOpen){searchDelay.stop();searcher.running=false;captureTimeout.stop();}}}
@@ -175,11 +176,11 @@ Item {
     onAppsChanged:initialize()
     Timer {id:saveDelay;interval:100;onTriggered:if(saveState.running)restart();else {saveState.command=["python",root.helper,JSON.stringify({action:"save",state:root.settings})];saveState.running=true;}}
     Process {id:saveState;stdout:StdioCollector{onStreamFinished:{try{const data=JSON.parse(text);if(data.error)root.notice=data.error;}catch(e){root.notice="Cannot save launcher settings.";}}}}
-    Timer {id:searchDelay;interval:120;onTriggered:{searcher.command=["python",root.helper,JSON.stringify({action:"search",query:root.query.trim()})];searcher.running=true;}}
-    Process {id:searcher;stdout:StdioCollector{onStreamFinished:{try{const data=JSON.parse(text);if(data.error){root.notice=data.error;return;}if(data.query!==root.query.trim())return;root.files=data.files||[];root.indexLimited=!!data.limited;if(data.error)root.notice=data.error;}catch(e){}}}}
-    Process {id:metadata;stdout:StdioCollector{onStreamFinished:{try{const data=JSON.parse(text);if(data.id===root.infoId)root.appInfo=data;}catch(e){}}}}
+    Timer {id:searchDelay;interval:120;onTriggered:{searcher.command=["python",root.helper,JSON.stringify({action:"search",query:root.query.trim().slice(0,160)})];searcher.running=true;}}
+    Process {id:searcher;stdout:StdioCollector{onStreamFinished:{try{const data=JSON.parse(text);if(data.error){root.notice=data.error;return;}if(data.query!==root.query.trim().slice(0,160))return;root.files=data.files||[];root.indexLimited=!!data.limited;if(data.error)root.notice=data.error;}catch(e){}}}}
+    Process {id:metadata;stdout:StdioCollector{onStreamFinished:{try{const data=JSON.parse(text);if(data.id===root.infoId)root.appInfo=data;else if(data.error){root.appInfo={version:"Unavailable"};root.notice=data.error;}}catch(e){if(text.trim()){root.appInfo={version:"Unavailable"};root.notice="Cannot read app information.";}}}}}
     Timer {id:captureTimeout;interval:250;onTriggered:root.backdropReady=true}
-    Process {id:capture;command:["python",root.helper,JSON.stringify({action:"backdrop",monitor:root.monitor})];stdout:StdioCollector{onStreamFinished:{try{const data=JSON.parse(text);root.backdrop=data.image||"";}catch(e){}root.backdropReady=true;captureTimeout.stop();}}}
+    Process {id:capture;command:["python",root.helper,JSON.stringify({action:"backdrop",monitor:root.monitor})];stdout:StdioCollector{onStreamFinished:{if(!text.trim()||!DesktopState.launcherOpen)return;try{const data=JSON.parse(text);root.backdrop=data.image||"";}catch(e){}root.backdropReady=true;captureTimeout.stop();}}}
     Process {id:aiContext;stdout:StdioCollector{onStreamFinished:{try{const data=JSON.parse(text);if(data.error)root.notice=data.error;else root.askAi(data.prompt);}catch(e){root.notice="Cannot prepare the AI context.";}}}}
     Process {id:action;stdout:StdioCollector{onStreamFinished:{try{const data=JSON.parse(text);if(data.error){if(!DesktopState.launcherOpen)DesktopState.launcherOpen=true;root.notice=data.error;}else root.notice="Applied";}catch(e){root.notice="Action failed.";}}}}
 }

@@ -84,10 +84,14 @@ def index():
     db=sqlite3.connect(CACHE,timeout=3)
     db.execute('CREATE TABLE IF NOT EXISTS files(path TEXT PRIMARY KEY,name TEXT,is_dir INTEGER,modified REAL)')
     db.execute('CREATE TABLE IF NOT EXISTS meta(key TEXT PRIMARY KEY,value TEXT)')
+    current_roots=roots();signature=json.dumps([str(path) for path in current_roots])
     last=db.execute("SELECT value FROM meta WHERE key='updated'").fetchone()
-    if last and time.time()-float(last[0])<60:return db
+    previous_roots=db.execute("SELECT value FROM meta WHERE key='roots'").fetchone()
+    try:fresh=last and 0<=time.time()-float(last[0])<60
+    except (ValueError,TypeError):fresh=False
+    if fresh and previous_roots and previous_roots[0]==signature:return db
     rows=[];seen=set();start=time.monotonic();limited=False
-    for base in roots():
+    for base in current_roots:
         try:
             info=base.stat();rows.append((str(base),base.name,1,info.st_mtime));seen.add(str(base))
         except OSError:continue
@@ -107,6 +111,7 @@ def index():
         db.execute('DELETE FROM files');db.executemany('INSERT OR REPLACE INTO files VALUES(?,?,?,?)',rows)
         db.execute("INSERT OR REPLACE INTO meta VALUES('updated',?)",(str(time.time()),))
         db.execute("INSERT OR REPLACE INTO meta VALUES('limited',?)",(str(int(limited)),))
+        db.execute("INSERT OR REPLACE INTO meta VALUES('roots',?)",(signature,))
     return db
 def search(query):
     query=query.strip()[:160];db=index()
