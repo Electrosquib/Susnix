@@ -11,9 +11,11 @@ Item {
     property bool filesOpen: false
     property string folderPath: home
     property var history: []
+    property var forwardHistory: []
     property int focusAttempts:0
     property var locations: [
         {name:"Home",path:home,icon:"folder",category:"dev"},
+        {name:"Desktop",path:home,icon:"folder",category:"dev"},
         {name:"Downloads",path:home,icon:"download",category:"ai"},
         {name:"Documents",path:home,icon:"document",category:"dev"},
         {name:"Pictures",path:home,icon:"picture",category:"browser"},
@@ -21,7 +23,7 @@ Item {
         {name:"Videos",path:home,icon:"play",category:"media"}
     ]
     function openFolder(path: string): void {
-        if (folderPath !== path) { history = history.concat([folderPath]); folderPath = path; }
+        if (folderPath !== path) { history = history.concat([folderPath]); forwardHistory=[];folderPath = path; }
         filesOpen = true;
         launcherOpen = false;
         focusAttempts = 10;
@@ -29,7 +31,11 @@ Item {
     }
     function back(): void {
         if (!history.length) return;
-        folderPath = history[history.length - 1]; history = history.slice(0, -1);
+        forwardHistory=forwardHistory.concat([folderPath]);folderPath = history[history.length - 1]; history = history.slice(0, -1);
+    }
+    function forward(): void {
+        if(!forwardHistory.length)return;
+        history=history.concat([folderPath]);folderPath=forwardHistory[forwardHistory.length-1];forwardHistory=forwardHistory.slice(0,-1);
     }
     function up(): void {
         if (folderPath === "/") return;
@@ -44,7 +50,7 @@ Item {
         }
         Quickshell.execDetached(["xdg-open", url]);
     }
-    function terminalHere(): void { Quickshell.execDetached({command:["bash",Qt.resolvedUrl("open-terminal.sh").toString().replace(/^file:\/\//,"")],workingDirectory:folderPath}); }
+    function terminalHere(directory: string): void { Quickshell.execDetached({command:["bash",Qt.resolvedUrl("open-terminal.sh").toString().replace(/^file:\/\//,"")],workingDirectory:directory||folderPath}); }
     function recenterFiles(): void {centerDelay.restart();}
     Timer {id:centerDelay;interval:200;onTriggered:if(root.filesOpen){if(centerFiles.running)restart();else centerFiles.running=true;}}
     Process {
@@ -65,7 +71,7 @@ Item {
     }
     Process {
         id:focusFiles
-        command:["hyprctl","eval","hl.dispatch(hl.dsp.focus({window=\"title:^Susnix Files$\"}))"]
+        command:["hyprctl","eval","hl.dispatch(hl.dsp.window.move({window=\"title:^Susnix Files$\",workspace=hl.get_active_workspace(),follow=false})); hl.dispatch(hl.dsp.focus({window=\"title:^Susnix Files$\"}))"]
         stdout:StdioCollector {id:focusReply}
         stderr:StdioCollector {}
         // QProcess::ExitStatus has no QML enum metadata in Quickshell 0.3.1.

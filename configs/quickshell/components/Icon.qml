@@ -6,6 +6,9 @@ import "../theme"
 Item {
     id: root
     property string name: ""
+    property bool effectsEnabled: true
+    // Qt serializes alpha as #AARRGGBB; SVG requires RGB plus opacity.
+    readonly property color strokeColor: Qt.rgba(color.r, color.g, color.b, 1)
     property color color: Theme.primary
     readonly property var paths: {
         "apps": "<rect x='3' y='3' width='7' height='7'/><rect x='14' y='3' width='7' height='7'/><rect x='3' y='14' width='7' height='7'/><rect x='14' y='14' width='7' height='7'/>",
@@ -35,12 +38,12 @@ Item {
         "unlock": "<rect x=\"5\" y=\"10\" width=\"14\" height=\"11\" rx=\"1\"/><path d=\"M8 10V6a4 4 0 0 1 8 0M12 14v3\"/>",
         "chevron": "<path d=\"M5 9L12 16L19 9\"/>"
     }
-    function triggerShock(): void { shock.trigger(); }
+    function triggerShock(): void { if (effectsEnabled) shock.trigger(); }
     readonly property bool shockActive: shock.active
     property real ringPhase: 1
     function pulse(): void { if (visible && Theme.glowStrength > 0) rings.restart(); }
     transform: Translate {
-        y: hover.hovered ? -1 : 0
+        y: root.effectsEnabled && hover.hovered ? -1 : 0
         Behavior on y { NumberAnimation { duration: Theme.animationFast; easing.type: Easing.OutCubic } }
     }
     implicitWidth: 16
@@ -48,7 +51,7 @@ Item {
     Image {
         id: glyph
         anchors.fill: parent
-        source: "data:image/svg+xml," + encodeURIComponent("<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='" + root.color + "' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'>" + (root.paths[root.name] || "") + "</svg>")
+        source: "data:image/svg+xml," + encodeURIComponent("<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='" + root.strokeColor + "' stroke-opacity='" + root.color.a + "' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'>" + (root.paths[root.name] || "") + "</svg>")
         opacity: hover.hovered ? 1 : 1 - Theme.opacityGlow
         Behavior on opacity { NumberAnimation { duration: Theme.animationFast; easing.type: Easing.OutCubic } }
         sourceSize.width: Math.ceil(width * Math.max(2, Window.window ? Window.window.devicePixelRatio : 1))

@@ -46,7 +46,7 @@ PanelWindow {
         columns:Math.min(root.height<600?6:3,Math.max(2,Math.floor((root.width-44)/96)))
         rowSpacing:12;columnSpacing:8
         Repeater {
-            model:DesktopState.locations
+            model:DesktopState.locations.filter(place=>place.name!=="Desktop")
             delegate:AbstractButton {
                 id:shortcut
                 required property var modelData

@@ -5,3 +5,4 @@ singleton LauncherService 1.0 LauncherService.qml
 singleton DesktopService 1.0 DesktopService.qml
 singleton DesktopState 1.0 DesktopState.qml
 singleton DesktopAppearance 1.0 DesktopAppearance.qml
+singleton ExplorerService 1.0 ExplorerService.qml

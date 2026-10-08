@@ -15,12 +15,11 @@ No desktop UI is baked into the wallpaper.
 - **Super+A**: toggle the existing control center.
 - Click a desktop folder to open it. In Files, double click folders/files to open
   them; use the sidebar, Back and Up buttons, or the editable absolute path.
-- The file-name filter is case insensitive and keeps directories available for
-  navigation, following Qt's native folder-model filtering.
+- The file-name filter is case insensitive. Clear it to restore all entries.
 - Files supports Ctrl+L (path), Ctrl+H (hidden files), Alt+Left (back), Alt+Up
   (parent), Escape (close), and a Terminal button for the current directory.
-- The file browser provides browsing and opening, not file-copy/delete operations.
-  Source/text files open in the installed editor (Vim is provided by core);
+- Files now includes Copy, Move, Rename, new folder, and Trash operations;
+  see [the application notes](../../../apps/README.md). Source/text files open in the installed editor (Vim is provided by core);
   other files use the system's default application through `xdg-open`.
 
 Manual commands inside Hyprland:
@@ -36,8 +35,8 @@ quickshell ipc -p ~/.config/quickshell/susnix call bar theme Nyx
 The global palette remains `~/.config/susnix/colors.json`. All new shell colors
 come from Theme; a palette switch updates the desktop, vector icons, wordmark,
 dock, application drawer, Files and window borders. It also regenerates the
-Susnix-only terminal config at `~/.config/susnix/foot.ini` for new terminal
-windows, without overwriting an existing `~/.config/foot/foot.ini`.
+Susnix-only terminal config at `~/.config/susnix/foot.ini` for fallback Foot windows, without overwriting an existing `~/.config/foot/foot.ini`.
+The native terminal watches the same global palette and recolors live.
 Hyprland config reloads restore the current border palette through shell IPC.
 The city wallpaper itself stays static across theme changes.
 
