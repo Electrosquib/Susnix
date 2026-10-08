@@ -37,6 +37,28 @@ bar_previous=""
 if [[ -f "$bar_runtime/bar-config" ]]; then
     IFS= read -r bar_previous < "$bar_runtime/bar-config" || true
 fi
+# Quickshell can return status 0 for an unavailable IPC handler during reload.
+bar_ipc() {
+    local bar_reply
+    bar_reply="$("$bar_qs" ipc -p "$1" call bar "$2" 2>&1)" || return 1
+    case "$bar_reply" in
+        *'Not ready to accept queries yet.'*|*'Function not found.'*|*'No running instances'*|*'Target not found.'*) return 1 ;;
+    esac
+    [[ -z "$bar_reply" ]] || printf '%s\n' "$bar_reply"
+    return 0
+}
+bar_ready() {
+    local bar_theme
+    bar_theme="$(bar_ipc "$1" currentTheme)" || return 1
+    case "$bar_theme" in Nyx|Aurora|Void|Sakura|Terminal|Ember) return 0;; *) return 1;; esac
+}
+bar_wait_ready() {
+    for ((bar_retry=0;bar_retry<20;bar_retry++)); do
+        if bar_ready "$1"; then return 0; fi
+        sleep 0.1
+    done
+    return 1
+}
 bar_toggle_after_start=false
 bar_ipc_action="$bar_action"
 if [[ "$bar_action" == control || "$bar_action" == files || "$bar_action" == applications || "$bar_action" == appearance ]]; then
@@ -44,7 +66,7 @@ if [[ "$bar_action" == control || "$bar_action" == files || "$bar_action" == app
     [[ "$bar_action" == appearance ]] && bar_ipc_action=refreshAppearance
     # Target the active checkout/installed instance instead of starting another bar.
     if [[ -n "$bar_previous" && -f "$bar_previous/services/TaskService.qml" ]] &&
-        "$bar_qs" ipc -p "$bar_previous" call bar "$bar_ipc_action" >/dev/null 2>&1; then
+        bar_wait_ready "$bar_previous" && bar_ipc "$bar_previous" "$bar_ipc_action" >/dev/null 2>&1; then
         exit 0
     fi
     bar_toggle_after_start=true
@@ -75,16 +97,16 @@ fi
 
 bar_state="$(systemctl --user show "$bar_unit" -p ActiveState --value 2>/dev/null || true)"
 if [[ "$bar_state" == active || "$bar_state" == activating ]]; then
-    if [[ "$bar_action" == reload ]] && "$bar_qs" ipc -p "$bar_dir" call bar reload >/dev/null 2>&1; then
+    if [[ "$bar_action" == reload ]] && bar_ipc "$bar_dir" reload >/dev/null 2>&1; then
         echo 'Susnix bar reloaded.'
         exit 0
     fi
 else
     # Adopt a terminal-launched instance into supervision, without touching other configs.
-    if "$bar_qs" ipc -p "$bar_dir" call bar currentTheme >/dev/null 2>&1; then
+    if bar_ready "$bar_dir" >/dev/null 2>&1; then
         "$bar_qs" kill -p "$bar_dir" >/dev/null
         for ((attempt = 0; attempt < 20; attempt++)); do
-            if ! "$bar_qs" ipc -p "$bar_dir" call bar currentTheme >/dev/null 2>&1; then break; fi
+            if ! bar_ready "$bar_dir" >/dev/null 2>&1; then break; fi
             sleep 0.1
         done
     fi
@@ -106,9 +128,9 @@ fi
 
 # A queued service is not proof that the QML loaded: wait for its IPC handler.
 for ((attempt = 0; attempt < 50; attempt++)); do
-    if "$bar_qs" ipc -p "$bar_dir" call bar currentTheme >/dev/null 2>&1; then
+    if bar_ready "$bar_dir" >/dev/null 2>&1; then
         if [[ "$bar_toggle_after_start" == true ]]; then
-            "$bar_qs" ipc -p "$bar_dir" call bar "$bar_ipc_action"
+            bar_ipc "$bar_dir" "$bar_ipc_action"
         fi
         echo 'Susnix bar is running with automatic recovery.'
         exit 0
