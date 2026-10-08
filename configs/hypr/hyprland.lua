@@ -295,6 +295,9 @@ hl.bind(mainMod .. " + M", hl.dsp.exec_cmd("command -v hyprshutdown >/dev/null 2
 hl.bind(mainMod .. " + E", hl.dsp.exec_cmd(fileManager))
 hl.bind(mainMod .. " + V", hl.dsp.window.float({ action = "toggle" }))
 hl.bind(mainMod .. " + R", hl.dsp.exec_cmd(menu))
+-- A tap opens Launch; releasing Super after another shortcut does not.
+hl.bind("SUPER + SUPER_L", hl.dsp.exec_cmd(menu), {release=true})
+hl.bind("SUPER + SUPER_R", hl.dsp.exec_cmd(menu), {release=true})
 hl.bind(mainMod .. " + A", hl.dsp.exec_cmd("bash \"${XDG_CONFIG_HOME:-$HOME/.config}/quickshell/susnix/bar.sh\" control"))
 hl.bind(mainMod .. " + P", hl.dsp.window.pseudo())
 hl.bind(mainMod .. " + J", hl.dsp.layout("togglesplit"))    -- dwindle only

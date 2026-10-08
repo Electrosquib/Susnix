@@ -25,6 +25,7 @@ ShellRoot {
         function currentTheme(): string { return ThemeManager.currentTheme; }
         function files(): void { DesktopState.openFolder(DesktopState.home); }
         function applications(): void { DesktopState.launcherOpen = !DesktopState.launcherOpen; }
+        function isLauncherOpen(): string { return DesktopState.launcherOpen ? "true" : "false"; }
         function refreshAppearance(): void { DesktopAppearance.refresh(); }
         function toggleControl(): void {
             const focused = Hyprland.focusedMonitor;

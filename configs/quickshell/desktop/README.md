@@ -13,8 +13,8 @@ No desktop UI is baked into the wallpaper.
 - **Alt + right drag** or **Super + right drag**: resize a window.
 - **Super+V**: toggle floating mode for free positioning of tiled applications.
 - **Super+E**: open or focus Files.
-- **Super+R**: toggle the application drawer. Enter launches the first match;
-  Escape closes the drawer while its search field is focused.
+- **Super** or **Super+R**: toggle [Susnix Launch](../../../apps/launcher/README.md),
+  with app/file/command search, favorites, folders, recents and app information.
 - **Super+Q**: launch a themed terminal.
 - **Super+A**: toggle the existing control center.
 - Click a desktop folder to open it. In Files, double click folders/files to open

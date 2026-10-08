@@ -38,6 +38,7 @@ mapfile -t DESKTOP_PKGS < <(grep -Ev '^[[:space:]]*(#|$)' "$REPO_DIR/packages/de
 
 # Native terminal: use the distro Qt/QTermWidget packages, not bundled binaries.
 bash "$REPO_DIR/scripts/setup-terminal.sh" "$TARGET_USER"
+bash "$REPO_DIR/scripts/setup-launcher.sh" "$TARGET_USER"
 bash "$REPO_DIR/scripts/setup-window-controls.sh" "$TARGET_USER"
 
 # Standard personal folders, using the user's XDG paths when configured.

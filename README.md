@@ -31,6 +31,8 @@ To disable tty1 desktop startup, remove the Susnix source line from `~/.bash_pro
 References: [Hyprland launch instructions](https://wiki.hypr.land/Getting-Started/Master-Tutorial/),
 [agetty automatic login](https://man7.org/linux/man-pages/man8/agetty.8.html).
 
+The unified [Susnix launcher](apps/launcher/README.md) opens with a tap of Super.
+
 The cyberpunk desktop, folder browser and dock are documented in
 [the desktop implementation notes](configs/quickshell/desktop/README.md),
 including launch commands, generated assets, validation and the exact file list.
