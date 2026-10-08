@@ -1,6 +1,8 @@
 # Susnix
 My attempt at an Arch-based Linux distribution with a cyberpunk-inspired design and a focus on aesthetics, coolness, and productivity.
 
+Disclaimer: AI was used heavily in the UI aspects of this project. 
+
 ## Desktop startup
 
 The bootstrap configures tty1 to log in to the selected desktop user and start
