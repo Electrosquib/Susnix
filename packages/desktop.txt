@@ -18,3 +18,7 @@ bluez
 blueman
 brightnessctl
 hyprlock
+xdg-user-dirs
+firefox
+imv
+mpv

@@ -36,6 +36,13 @@ mapfile -t DESKTOP_PKGS < <(grep -Ev '^[[:space:]]*(#|$)' "$REPO_DIR/packages/de
 
 "${SYSTEMCTL[@]}" enable NetworkManager bluetooth
 
+# Standard personal folders, using the user's XDG paths when configured.
+if [[ $EUID -eq 0 ]]; then
+    runuser -u "$TARGET_USER" -- xdg-user-dirs-update
+else
+    xdg-user-dirs-update
+fi
+
 install -d -m 0755 -o "$TARGET_USER" -g "$TARGET_GROUP" "$HOME_DIR/.config/hypr"
 install -m 0644 -o "$TARGET_USER" -g "$TARGET_GROUP" \
     "$REPO_DIR/configs/hypr/hyprland.lua" \
