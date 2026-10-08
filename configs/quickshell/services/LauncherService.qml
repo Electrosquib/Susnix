@@ -10,11 +10,19 @@ QtObject {
         for(const id of ids) { const found=DesktopEntries.byId(id);if(found) return found; }
         return applications.find(app=>app.categories.includes(category)) || null;
     }
+    function commandFor(app: var): var {
+        // Quickshell execute ignores Terminal=true; wrap terminal apps explicitly.
+        const terminal=["bash",Qt.resolvedUrl("open-terminal.sh").toString().replace(/^file:\/\//,"")];
+        return app.runInTerminal ? terminal.concat(["-e"],app.command) : app.command[0]==="foot" ? terminal.concat(app.command.slice(1)) : app.command;
+    }
     function launch(app: var): bool {
         if(!app || !app.command.length) { error="Application is unavailable";return false; }
-        // Quickshell execute ignores Terminal=true; wrap terminal apps explicitly.
-        const command=app.runInTerminal ? ["foot","-e"].concat(app.command) : app.command;
-        Quickshell.execDetached({command:command,workingDirectory:app.workingDirectory});error="";return true;
+        Quickshell.execDetached({command:commandFor(app),workingDirectory:app.workingDirectory});error="";return true;
+    }
+    function editFile(path: string): bool {
+        const app=entry(["code","codium","org.kde.kate","vim"],"TextEditor");
+        if(!app || !app.command.length)return false;
+        Quickshell.execDetached({command:commandFor(app).concat(["--",path]),workingDirectory:app.workingDirectory});return true;
     }
     function openAi(): void { Quickshell.execDetached(["xdg-open","https://chatgpt.com"]); }
 }

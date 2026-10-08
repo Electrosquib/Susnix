@@ -7,8 +7,8 @@ bar_unit="susnix-bar.service"
 bar_action="${1:-reload}"
 
 case "$bar_action" in
-    start|reload|restart|stop|status|logs|control) ;;
-    *) echo "Usage: bash $0 {start|reload|restart|stop|status|logs|control}" >&2; exit 2 ;;
+    start|reload|restart|stop|status|logs|control|files|applications|appearance) ;;
+    *) echo "Usage: bash $0 {start|reload|restart|stop|status|logs|control|files|applications|appearance}" >&2; exit 2 ;;
 esac
 
 if [[ "$bar_action" == status ]]; then
@@ -38,10 +38,13 @@ if [[ -f "$bar_runtime/bar-config" ]]; then
     IFS= read -r bar_previous < "$bar_runtime/bar-config" || true
 fi
 bar_toggle_after_start=false
-if [[ "$bar_action" == control ]]; then
+bar_ipc_action="$bar_action"
+if [[ "$bar_action" == control || "$bar_action" == files || "$bar_action" == applications || "$bar_action" == appearance ]]; then
+    [[ "$bar_action" == control ]] && bar_ipc_action=toggleControl
+    [[ "$bar_action" == appearance ]] && bar_ipc_action=refreshAppearance
     # Target the active checkout/installed instance instead of starting another bar.
     if [[ -n "$bar_previous" && -f "$bar_previous/services/TaskService.qml" ]] &&
-        "$bar_qs" ipc -p "$bar_previous" call bar toggleControl >/dev/null 2>&1; then
+        "$bar_qs" ipc -p "$bar_previous" call bar "$bar_ipc_action" >/dev/null 2>&1; then
         exit 0
     fi
     bar_toggle_after_start=true
@@ -105,7 +108,7 @@ fi
 for ((attempt = 0; attempt < 50; attempt++)); do
     if "$bar_qs" ipc -p "$bar_dir" call bar currentTheme >/dev/null 2>&1; then
         if [[ "$bar_toggle_after_start" == true ]]; then
-            "$bar_qs" ipc -p "$bar_dir" call bar toggleControl
+            "$bar_qs" ipc -p "$bar_dir" call bar "$bar_ipc_action"
         fi
         echo 'Susnix bar is running with automatic recovery.'
         exit 0

@@ -35,9 +35,9 @@ hl.monitor({
 ---------------------
 
 -- Set programs that you use
-local terminal    = "foot"
-local fileManager = "dolphin"
-local menu        = "hyprlauncher"
+local terminal    = "bash \"${XDG_CONFIG_HOME:-$HOME/.config}/quickshell/susnix/services/open-terminal.sh\""
+local fileManager = "bash \"${XDG_CONFIG_HOME:-$HOME/.config}/quickshell/susnix/bar.sh\" files"
+local menu        = "bash \"${XDG_CONFIG_HOME:-$HOME/.config}/quickshell/susnix/bar.sh\" applications"
 
 
 -------------------
@@ -61,6 +61,10 @@ hl.on("hyprland.start", function ()
     hl.exec_cmd("bash \"${XDG_CONFIG_HOME:-$HOME/.config}/susnix/clipboard.sh\" start")
 end)
 
+-- A compositor config reload resets runtime borders; restore the global palette.
+hl.on("config.reloaded", function ()
+    hl.exec_cmd("bash \"${XDG_CONFIG_HOME:-$HOME/.config}/quickshell/susnix/bar.sh\" appearance")
+end)
 
 -------------------------------
 ---- ENVIRONMENT VARIABLES ----
@@ -103,10 +107,7 @@ hl.config({
 
         border_size = 2,
 
-        col = {
-            active_border   = { colors = {"rgba(33ccffee)", "rgba(00ff99ee)"}, angle = 45 },
-            inactive_border = "rgba(595959aa)",
-        },
+        -- Susnix applies window border colors from the global shell palette.
 
         -- Set to true to enable resizing windows by clicking and dragging on borders and gaps
         resize_on_border = false,
@@ -336,6 +337,12 @@ local suppressMaximizeRule = hl.window_rule({
     suppress_event = "maximize",
 })
 -- suppressMaximizeRule:set_enabled(false)
+
+hl.window_rule({
+    name = "susnix-files",
+    match = { title = "^Susnix Files$" },
+    float = true,
+})
 
 hl.window_rule({
     -- Fix some dragging issues with XWayland

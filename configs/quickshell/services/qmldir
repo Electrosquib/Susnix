@@ -3,3 +3,5 @@ singleton TaskService 1.0 TaskService.qml
 singleton ResourceMonitor 1.0 ResourceMonitor.qml
 singleton LauncherService 1.0 LauncherService.qml
 singleton DesktopService 1.0 DesktopService.qml
+singleton DesktopState 1.0 DesktopState.qml
+singleton DesktopAppearance 1.0 DesktopAppearance.qml

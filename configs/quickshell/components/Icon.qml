@@ -8,6 +8,11 @@ Item {
     property string name: ""
     property color color: Theme.primary
     readonly property var paths: {
+        "apps": "<rect x='3' y='3' width='7' height='7'/><rect x='14' y='3' width='7' height='7'/><rect x='3' y='14' width='7' height='7'/><rect x='14' y='14' width='7' height='7'/>",
+        "download": "<path d='M12 3V16M6 10L12 16L18 10M4 17V21H20V17'/>",
+        "document": "<path d='M6 2H15L20 7V22H6ZM15 2V8H20M9 12H17M9 16H17'/>",
+        "picture": "<rect x='2' y='3' width='20' height='18' rx='1'/><path d='M2 17L8 11L13 16L17 12L22 17'/><circle cx='16' cy='8' r='2'/>",
+        "play": "<path d='M8 4L21 12L8 20Z'/>",
         "bluetooth": "<path d='M8 5L18 15L12 21V3L18 9L8 19'/>",
         "brightness": "<circle cx='12' cy='12' r='4'/><path d='M12 2V5M12 19V22M2 12H5M19 12H22M5 5L7 7M17 17L19 19M5 19L7 17M17 7L19 5'/>",
         "controls": "<path d='M4 6H20M4 12H20M4 18H20'/><circle cx='9' cy='6' r='2'/><circle cx='15' cy='12' r='2'/><circle cx='8' cy='18' r='2'/>",

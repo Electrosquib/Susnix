@@ -11,7 +11,7 @@ PanelCard {
     implicitHeight:62
     readonly property var pins:[
         {name:"Terminal",icon:"terminal",entry:LauncherService.entry(["foot","kitty","Alacritty"],"TerminalEmulator"),category:"dev"},
-        {name:"Files",icon:"folder",entry:LauncherService.entry(["org.kde.dolphin","thunar","org.gnome.Nautilus"],"FileManager"),category:"system"},
+        {name:"Files",icon:"folder",category:"system",action:"files"},
         {name:"Browser",icon:"browser",entry:LauncherService.entry(["firefox","chromium","brave-browser"],"WebBrowser"),category:"browser"},
         {name:"ChatGPT",icon:"ai",entry:LauncherService.entry([],"WebBrowser"),category:"ai",action:"ai"},
         {name:"Editor",icon:"editor",entry:LauncherService.entry(["code","codium","org.kde.kate","nvim"],"TextEditor"),category:"dev"},
@@ -26,12 +26,13 @@ PanelCard {
                 required property var modelData
                 objectName:"launch"+modelData.name
                 width:(root.width-30)/6;height:root.compact?32:43
-                enabled:modelData.action==="settings" || !!modelData.entry
+                enabled:modelData.action==="settings" || modelData.action==="files" || !!modelData.entry
                 opacity:enabled?1:Theme.opacityDisabled
                 hoverEnabled:true
                 Accessible.name:modelData.name+(enabled?"":" (not installed)")
                 onClicked: {
                     if(modelData.action==="settings")root.settingsRequested();
+                    else if(modelData.action==="files"){DesktopState.openFolder(DesktopState.home);root.launched();}
                     else if(modelData.action==="ai"){LauncherService.openAi();root.launched();}
                     else if(LauncherService.launch(modelData.entry))root.launched();
                 }
