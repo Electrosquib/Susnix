@@ -8,6 +8,7 @@ Item {
     id: root
     property color tint: Theme.primary
     property string emblem: ""
+    property bool effectsEnabled: true
     implicitWidth: 48
     implicitHeight: 44
     Image {
@@ -23,5 +24,5 @@ Item {
             "<path d='M6 18H58V45Q58 49 54 49H10Q6 49 6 45Z' fill='url(#body)' stroke='url(#edge)' stroke-width='1.5'/>" +
             "<path d='M8 20H56M10 47H22M50 47H54' stroke='" + root.tint + "' opacity='.65'/><path d='M9 20H28L14 33H9Z' fill='" + Theme.text + "' opacity='.13'/></svg>")
     }
-    Icon { anchors.centerIn:parent; anchors.verticalCenterOffset:5; width:20;height:20; name:root.emblem; color:root.tint; visible:root.emblem.length>0 }
+    Icon { anchors.centerIn:parent; anchors.verticalCenterOffset:root.height*.11; width:Math.min(20,root.width*.42);height:width; effectsEnabled:root.effectsEnabled; name:root.emblem; color:root.tint; visible:root.emblem.length>0 }
 }

@@ -8,6 +8,10 @@ No desktop UI is baked into the wallpaper.
 
 ## Usage
 
+- Drag the Files/Terminal header to move the window.
+- **Alt + left drag** or **Super + left drag**: move any window.
+- **Alt + right drag** or **Super + right drag**: resize a window.
+- **Super+V**: toggle floating mode for free positioning of tiled applications.
 - **Super+E**: open or focus Files.
 - **Super+R**: toggle the application drawer. Enter launches the first match;
   Escape closes the drawer while its search field is focused.

@@ -56,6 +56,12 @@ FloatingWindow {
             Text {text:sidebarButton.entry.name||"";color:sidebarButton.tint;Layout.fillWidth:true;elide:Text.ElideRight;font{family:Theme.fontFamily;pixelSize:10}}
         }
     }
+    function folderEmblem(path: string): string {
+        const location=DesktopState.locations.find(entry=>entry.path===path);
+        if(location&&location.icon!=="folder")return location.icon;
+        if(path===DesktopState.home+"/Projects"||path===DesktopState.home+"/susnix"||path===DesktopState.home+"/Radar")return "terminal";
+        return "";
+    }
     function bytes(n: real): string {if(n<1024)return n+" B";if(n<1048576)return (n/1024).toFixed(1)+" KB";if(n<1073741824)return (n/1048576).toFixed(1)+" MB";return (n/1073741824).toFixed(1)+" GB";}
     function modified(n: real): string {return Qt.formatDateTime(new Date(n*1000),"MMM d, HH:mm");}
     function open(file: var): void {if(!file)return;if(file.isDir)DesktopState.openFolder(file.path);else DesktopState.openFile(file.url);}
@@ -165,7 +171,8 @@ FloatingWindow {
                             Row {
                                 visible:root.viewMode==="Details";anchors.fill:parent
                                 Row {width:files.width*(root.compact?.65:.45);height:parent.height;spacing:6
-                                    Icon {effectsEnabled:false;name:fileButton.modelData.isDir?"folder":"document";color:fileButton.modelData.isDir?Qt.alpha(Theme.primary,.75):Theme.textMuted;width:18;height:18;anchors.verticalCenter:parent.verticalCenter}
+                                    NeonFolder {visible:fileButton.modelData.isDir;effectsEnabled:false;tint:Theme.primary;emblem:root.folderEmblem(fileButton.modelData.path);width:22;height:20;anchors.verticalCenter:parent.verticalCenter}
+                                    Icon {visible:!fileButton.modelData.isDir;effectsEnabled:false;name:"document";color:fileButton.modelData.isDir?Qt.alpha(Theme.primary,.75):Theme.textMuted;width:18;height:18;anchors.verticalCenter:parent.verticalCenter}
                                     Text {width:parent.width-28;text:fileButton.modelData.name;color:fileButton.hovered?Theme.text:Qt.alpha(Theme.text,.9);font{family:Theme.fontFamily;pixelSize:10}elide:Text.ElideMiddle;anchors.verticalCenter:parent.verticalCenter}
                                 }
                                 Text {visible:!root.compact;width:files.width*.18;text:fileButton.modelData.type;color:Theme.textMuted;font{family:Theme.fontFamily;pixelSize:10}elide:Text.ElideRight;anchors.verticalCenter:parent.verticalCenter}
@@ -175,7 +182,8 @@ FloatingWindow {
                             Column {
                                 visible:root.viewMode!=="Details";anchors.fill:parent;spacing:5
                                 Item {width:parent.width;height:root.viewMode==="Grid"?68:40;y:fileButton.hovered?-1:0
-                                    Icon {effectsEnabled:false;anchors.centerIn:parent;width:root.viewMode==="Grid"?40:28;height:width;name:fileButton.modelData.isDir?"folder":/\.(png|jpg|svg|webp)$/i.test(fileButton.modelData.name)?"picture":"document";color:fileButton.modelData.isDir?Qt.alpha(Theme.primary,.75):Qt.alpha(Theme.secondary,.8)}
+                                    NeonFolder {visible:fileButton.modelData.isDir;effectsEnabled:false;anchors.centerIn:parent;width:root.viewMode==="Grid"?48:34;height:width*.9;tint:Theme.primary;emblem:root.folderEmblem(fileButton.modelData.path)}
+                                    Icon {visible:!fileButton.modelData.isDir;effectsEnabled:false;anchors.centerIn:parent;width:root.viewMode==="Grid"?40:28;height:width;name:fileButton.modelData.isDir?"folder":/\.(png|jpg|svg|webp)$/i.test(fileButton.modelData.name)?"picture":"document";color:fileButton.modelData.isDir?Qt.alpha(Theme.primary,.75):Qt.alpha(Theme.secondary,.8)}
                                 }
                                 Text {width:parent.width;text:fileButton.modelData.name;color:Theme.text;font{family:Theme.fontFamily;pixelSize:10}horizontalAlignment:Text.AlignHCenter;elide:Text.ElideMiddle}
                                 Text {visible:root.viewMode==="Grid";width:parent.width;text:fileButton.modelData.isDir?"Folder":root.bytes(fileButton.modelData.size);color:Theme.textMuted;font{family:Theme.fontFamily;pixelSize:9}horizontalAlignment:Text.AlignHCenter}

@@ -271,7 +271,11 @@ if productName == "VirtualBox" then
     for _, deviceName in ipairs({"virtualbox-mouse-integration", "virtualbox-usb-tablet", "imexps/2-generic-explorer-mouse"}) do
         hl.device({name=deviceName, accel_profile="flat", sensitivity=0})
     end
-    hl.config({decoration={blur={enabled=false}}})
+    hl.config({
+        decoration={blur={enabled=false}},
+        -- VM cursor planes can lag behind the host's absolute pointer.
+        cursor={no_hardware_cursors=1},
+    })
     hl.animation({leaf="windows", enabled=true, speed=1.8, bezier="easeOutQuint"})
     hl.animation({leaf="windowsIn", enabled=true, speed=1.8, bezier="easeOutQuint", style="popin 98%"})
     hl.animation({leaf="windowsOut", enabled=true, speed=1.5, bezier="easeOutQuint", style="popin 98%"})
@@ -320,6 +324,10 @@ hl.bind(mainMod .. " + mouse_up",   hl.dsp.focus({ workspace = "e-1" }))
 -- Move/resize windows with mainMod + LMB/RMB and dragging
 hl.bind(mainMod .. " + mouse:272", hl.dsp.window.drag(),   { mouse = true })
 hl.bind(mainMod .. " + mouse:273", hl.dsp.window.resize(), { mouse = true })
+
+-- The host may capture Super in a VM. Alt provides a guest-local fallback.
+hl.bind("ALT + mouse:272", hl.dsp.window.drag())
+hl.bind("ALT + mouse:273", hl.dsp.window.resize())
 
 -- Laptop multimedia keys for volume and LCD brightness
 hl.bind("XF86AudioRaiseVolume", hl.dsp.exec_cmd("wpctl set-volume -l 1 @DEFAULT_AUDIO_SINK@ 5%+"), { locked = true, repeating = true })
