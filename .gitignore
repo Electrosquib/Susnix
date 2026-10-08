@@ -5,4 +5,7 @@
 *.vdi
 build/
 work/
+.env
+.env.*
+!.env.example
 out/
