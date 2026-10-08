@@ -5,6 +5,7 @@ import "../services"
 PanelCard {
     id:root
     property bool fitMode:false
+    property bool monitoring:true
     implicitHeight:content.height+24
     Column {
         id:content;objectName:"performanceContent";x:root.fitMode?8:12;y:root.fitMode?8:12;width:parent.width-2*x;spacing:root.fitMode?4:8
@@ -42,7 +43,7 @@ PanelCard {
             Repeater {model:[1,10,60];delegate:PanelButton {required property int modelData;text:modelData+"m";tint:graph.minutes===modelData?Theme.primary:Theme.textMuted;implicitHeight:20;onClicked:graph.minutes=modelData}}
             Text {text:"  history since shell start";color:Theme.textMuted;font {family:Theme.fontFamily;pixelSize:8} anchors.verticalCenter:parent.verticalCenter}
         }
-        ResourceGraph {traceProgress: Math.max(0, Math.min(1, (root.initialization-.35)/.6)); id:graph;objectName:"performanceGraph";width:parent.width;height:root.fitMode?Math.max(54,Math.min(90,root.height-2*content.y-statsHeader.height-metricLegend.height-resourceRows.height-groupLegend.height-measurementNotes.height-5*content.spacing)):178}
+        ResourceGraph {active:root.monitoring;traceProgress: Math.max(0, Math.min(1, (root.initialization-.35)/.6)); id:graph;objectName:"performanceGraph";width:parent.width;height:root.fitMode?Math.max(20,Math.min(90,root.height-2*content.y-statsHeader.height-metricLegend.height-resourceRows.height-groupLegend.height-measurementNotes.height-5*content.spacing)):178}
         Column {
             id: resourceRows
             width:parent.width;spacing:root.fitMode?2:3

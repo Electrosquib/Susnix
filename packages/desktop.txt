@@ -14,3 +14,7 @@ mako
 wl-clipboard
 grim
 slurp
+bluez
+blueman
+brightnessctl
+hyprlock

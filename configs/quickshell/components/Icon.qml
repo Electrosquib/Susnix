@@ -8,6 +8,8 @@ Item {
     property string name: ""
     property color color: Theme.primary
     readonly property var paths: {
+        "bluetooth": "<path d='M8 5L18 15L12 21V3L18 9L8 19'/>",
+        "brightness": "<circle cx='12' cy='12' r='4'/><path d='M12 2V5M12 19V22M2 12H5M19 12H22M5 5L7 7M17 17L19 19M5 19L7 17M17 7L19 5'/>",
         "controls": "<path d='M4 6H20M4 12H20M4 18H20'/><circle cx='9' cy='6' r='2'/><circle cx='15' cy='12' r='2'/><circle cx='8' cy='18' r='2'/>",
         "terminal": "<rect x='2' y='4' width='20' height='16' rx='2'/><path d='M6 8L10 12L6 16M13 16H18'/>",
         "folder": "<path d='M2 7V20H22V7H12L9 4H2Z M2 10H22'/>",

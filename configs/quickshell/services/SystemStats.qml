@@ -1,6 +1,7 @@
 pragma Singleton
 import QtQuick
 import Quickshell.Io
+import Quickshell.Networking
 
 // One collector shared by every monitor. UI components only consume properties.
 Item {
@@ -13,9 +14,12 @@ Item {
         : gpuStatus === "error" ? "GPU utilization provider failed or returned no valid reading."
         : gpuUsage >= 0 ? "Busiest supported GPU utilization."
         : "This GPU does not expose a supported utilization counter."
-    property int volume: -1
-    property bool muted: false
-    property string network: "Unavailable"
+    property bool visualActive: true
+    onVisualActiveChanged: if (visualActive) cpu.reload()
+    readonly property int volume: DesktopService.audioReady ? Math.round(DesktopService.volume) : -1
+    readonly property bool muted: DesktopService.muted
+    readonly property string network: DesktopService.connectedDevices.some(device=>device.type===DeviceType.Wifi) ? "WiFi"
+        : DesktopService.connectedDevices.some(device=>device.type===DeviceType.Wired) ? "Wired" : "Offline"
     property real previousNetworkBytes: -1
     property int networkActivitySerial: 0
     property real previousTotal: -1
@@ -50,12 +54,6 @@ Item {
             : data.trim() === "error" ? "error" : "unavailable";
     }
 
-    function readAudio(data: string): void {
-        const match = data.match(/Volume:\s*([0-9]+(?:\.[0-9]+)?)/);
-        volume = match ? Math.round(Number(match[1]) * 100) : -1;
-        muted = data.includes("[MUTED]");
-    }
-
     function readTraffic(data: string): void {
         let total = 0;
         for (const line of data.split("\n")) {
@@ -68,52 +66,34 @@ Item {
         previousNetworkBytes = total;
     }
 
-    function readNetwork(data: string): void {
-        const lines = data.trim().split("\n");
-        if (lines.some(line => line === "wifi:connected")) network = "WiFi";
-        else if (lines.some(line => line === "ethernet:connected")) network = "Wired";
-        else if (lines.some(line => line.endsWith(":connected"))) network = "Online";
-        else network = data.trim() ? "Offline" : "Unavailable";
-    }
-
-    Process {
+    FileView {
         id: cpu
-        command: ["cat", "/proc/stat"]
-        stdout: StdioCollector { onStreamFinished: root.readCpu(text) }
+        path: "/proc/stat"
+        printErrors:false
+        onLoaded:root.readCpu(text())
     }
     Process {
         id: gpu
         command: ["bash", root.collector, "gpu"]
         stdout: StdioCollector { onStreamFinished: root.readGpu(text) }
     }
-    Process {
-        id: audio
-        command: ["bash", root.collector, "audio"]
-        stdout: StdioCollector { onStreamFinished: root.readAudio(text) }
-    }
-    Process {
-        id: networkPoll
-        command: ["bash", root.collector, "network"]
-        stdout: StdioCollector { onStreamFinished: root.readNetwork(text) }
-    }
-    Process {
+    FileView {
         id: traffic
-        command: ["cat", "/proc/net/dev"]
-        stdout: StdioCollector { onStreamFinished: root.readTraffic(text) }
+        path: "/proc/net/dev"
+        printErrors:false
+        onLoaded:root.readTraffic(text())
     }
     Timer {
-        interval: 1000; running: true; repeat: true; triggeredOnStart: true
+        interval: 1000; running: root.visualActive; repeat: true; triggeredOnStart: true
         onTriggered: {
-            if (!cpu.running) cpu.running = true;
-            if (!audio.running) audio.running = true;
+            cpu.reload();
         }
     }
     Timer {
-        interval: 2000; running: true; repeat: true; triggeredOnStart: true
+        interval:root.gpuStatus === "virtual" || root.gpuStatus === "unavailable" ? 30000 : 2000; running: true; repeat: true; triggeredOnStart: true
         onTriggered: {
             if (!gpu.running) gpu.running = true;
-            if (!networkPoll.running) networkPoll.running = true;
-            if (!traffic.running) traffic.running = true;
         }
     }
+    Timer { interval:2000;running:root.visualActive;repeat:true;onTriggered:traffic.reload() }
 }

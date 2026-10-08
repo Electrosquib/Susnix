@@ -5,6 +5,8 @@ import Quickshell.Io
 
 Item {
     id: root
+    property bool detailActive: false
+    onDetailActiveChanged: if (detailActive && !sampler.running) sampler.running=true
     property var settings: JSON.parse(defaults.text())
     property var previous: ({})
     property var sample: ({cpu:-1,gpu:-1,ram:-1,disk:-1,network:0,diskRate:0,memTotal:0,memUsed:0,groups:[],processes:[]})
@@ -115,8 +117,8 @@ Item {
     }
     Process {
         id: sampler
-        command:["bash",root.samplerPath]
+        command:["bash",root.samplerPath,root.detailActive?"full":"light"]
         stdout: StdioCollector { onStreamFinished: root.ingest(text) }
     }
-    Timer { interval:2000;running:true;repeat:true;triggeredOnStart:true;onTriggered:if(!sampler.running) sampler.running=true }
+    Timer { interval:root.detailActive?3000:15000;running:true;repeat:true;triggeredOnStart:true;onTriggered:if(!sampler.running) sampler.running=true }
 }

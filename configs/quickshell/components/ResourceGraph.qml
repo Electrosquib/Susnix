@@ -3,12 +3,25 @@ import "../theme"
 import "../services"
 Item {
     id: root
+    property bool active:true
+    onActiveChanged: { if(active) refreshGraph(); else refresh.stop(); }
     property real traceProgress: 1
-    onTraceProgressChanged: plot.requestPaint()
+    onTraceProgressChanged: if(active) plot.requestPaint()
     property int minutes: 10
     readonly property bool compact:height<110
     property var enabledMetrics: ["cpu","gpu","ram","disk","network"]
-    readonly property var points: ResourceMonitor.history.filter(point=>point.time>=Date.now()-minutes*60000)
+    readonly property var points: {
+        const history=ResourceMonitor.history.filter(point=>point.time>=Date.now()-minutes*60000);
+        const budget=Math.max(2,Math.ceil(plot.width/2));
+        if(history.length<=budget) return history;
+        const step=Math.ceil(history.length/budget), sampled=[];
+        // Retain the strongest activity sample in each pixel-sized bucket.
+        for(let i=0;i<history.length-1;i+=step) {
+            const bucket=history.slice(i,Math.min(history.length-1,i+step));
+            sampled.push(bucket.reduce((peak,p)=>p.cpu+p.disk>peak.cpu+peak.disk?p:peak,bucket[0]));
+        }
+        sampled.push(history[history.length-1]);return sampled;
+    }
     property var previousPoints: []
     property var nextPoints: []
     property real refreshProgress: 1
@@ -27,18 +40,26 @@ Item {
         const last = current.length ? current[current.length-1] : null;
         previousPoints = points.map(point=>byTime.get(point.time) || (last && point.time>last.time ? last : point));
         nextPoints = points;
-        if (current.length) refresh.restart(); else refreshProgress=1;
+        if (current.length && active) { refreshProgress=0; refresh.started=Date.now(); refresh.start(); } else refreshProgress=1;
     }
-    NumberAnimation { id: refresh; target: root; property: "refreshProgress"; from: 0; to: 1; duration: Theme.animationNormal; easing.type: Easing.OutCubic }
-    onRefreshProgressChanged: plot.requestPaint()
-    onRenderedPointsChanged: plot.requestPaint()
+    Timer {
+        id:refresh;property real started:0
+        interval:33;repeat:true
+        onTriggered: {
+            const phase=Math.min(1,(Date.now()-started)/Math.max(1,Theme.animationNormal));
+            root.refreshProgress=1-Math.pow(1-phase,3);
+            if(phase>=1) stop();
+        }
+    }
+    onRefreshProgressChanged: if(active) plot.requestPaint()
+    onRenderedPointsChanged: if(active) plot.requestPaint()
     readonly property var styles: [Theme.primary,Theme.secondary,Theme.dev,Theme.media,Theme.ai,Theme.border,Theme.textMuted]
     readonly property var metrics: ["cpu","gpu","ram","disk","network"]
     property int hoverIndex:-1
     implicitHeight:178
-    onPointsChanged: { if (hoverIndex >= points.length) hoverIndex = -1; Qt.callLater(refreshGraph); }
-    onEnabledMetricsChanged: plot.requestPaint()
-    onStylesChanged: plot.requestPaint()
+    onPointsChanged: { if (hoverIndex >= points.length) hoverIndex = -1; if(active) Qt.callLater(refreshGraph); }
+    onEnabledMetricsChanged: if(active) plot.requestPaint()
+    onStylesChanged: if(active) plot.requestPaint()
     Column {
         x:0;y:6;height:136;spacing:Math.max(1,(plot.height-24)/2)
         Repeater {model:["100%","50%","0%"];delegate:Text {required property string modelData;text:modelData;color:Theme.textMuted;font {family:Theme.fontFamily;pixelSize:8}}}

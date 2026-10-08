@@ -34,7 +34,7 @@ mapfile -t DESKTOP_PKGS < <(grep -Ev '^[[:space:]]*(#|$)' "$REPO_DIR/packages/de
 "${PACMAN[@]}" -S --needed --noconfirm "${CORE_PKGS[@]}"
 "${PACMAN[@]}" -S --needed --noconfirm "${DESKTOP_PKGS[@]}"
 
-"${SYSTEMCTL[@]}" enable NetworkManager
+"${SYSTEMCTL[@]}" enable NetworkManager bluetooth
 
 install -d -m 0755 -o "$TARGET_USER" -g "$TARGET_GROUP" "$HOME_DIR/.config/hypr"
 install -m 0644 -o "$TARGET_USER" -g "$TARGET_GROUP" \

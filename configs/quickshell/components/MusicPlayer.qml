@@ -10,7 +10,8 @@ PanelCard {
     property MprisPlayer player: players.find(candidate => candidate.isPlaying) || players[0] || null
     property real elapsed: player && player.positionSupported ? player.position : 0
     readonly property real duration: player && player.lengthSupported ? player.length : 0
-    implicitHeight: 132
+    property bool compact:false
+    implicitHeight:compact?104:132
     function timestamp(seconds: real): string {
         const total = Math.max(0, Math.floor(seconds));
         return Math.floor(total/60) + ":" + (total%60).toString().padStart(2,"0");
@@ -37,7 +38,7 @@ PanelCard {
     Text {
         anchors { right: parent.right; rightMargin: 12 }
         y: 8
-        text: root.player ? root.player.isPlaying ? "PLAYING" : "PAUSED" : "NO PLAYER"
+        text:root.compact && root.duration>0 ? root.timestamp(root.elapsed)+" / "+root.timestamp(root.duration) : root.player ? root.player.isPlaying ? "PLAYING" : "PAUSED" : "NO PLAYER"
         width: parent.width-90; elide: Text.ElideRight; horizontalAlignment: Text.AlignRight
         color: Theme.textMuted
         font { family: Theme.fontFamily; pixelSize: 9 }
@@ -74,7 +75,7 @@ PanelCard {
     Item {
         id: track
         objectName: "trackIndicator"
-        x: 12; y: 63; width: parent.width-24; height: 16
+        x: 12; y: 63; width: parent.width-24; height: root.compact?10:16
         readonly property real fraction: root.duration > 0 ? Math.max(0,Math.min(1,root.elapsed/root.duration)) : 0
         readonly property bool seekable: root.player !== null && root.player.canSeek && root.player.positionSupported && root.duration > 0
         Rectangle {
@@ -110,13 +111,13 @@ PanelCard {
         }
     }
     Text {
-        x: 12; y: 79; text: root.timestamp(root.elapsed)
+        visible:!root.compact;x: 12; y: 79; text: root.timestamp(root.elapsed)
         color: Theme.textMuted
         font { family: Theme.fontFamily; pixelSize: 9 }
     }
     Text {
         anchors { right: parent.right; rightMargin: 12 }
-        y: 79; text: root.duration > 0 ? root.timestamp(root.duration) : "--:--"
+        visible:!root.compact;y: 79; text: root.duration > 0 ? root.timestamp(root.duration) : "--:--"
         color: Theme.textMuted
         font { family: Theme.fontFamily; pixelSize: 9 }
     }
@@ -154,19 +155,19 @@ PanelCard {
     }
     Row {
         anchors.horizontalCenter: parent.horizontalCenter
-        y: 96; spacing: 10
+        y: root.compact?75:96; spacing: 10
         PlaybackButton {
-            objectName: "previousTrack"; text: "|◀"
+            objectName: "previousTrack";height:root.compact?25:30; text: "|◀"
             enabled: root.player !== null && root.player.canGoPrevious
             onClicked: root.player.previous()
         }
         PlaybackButton {
-            objectName: "togglePlayback"; width: 62; text: root.player && root.player.isPlaying ? "Ⅱ" : "▶"
+            objectName: "togglePlayback";height:root.compact?25:30; width: 62; text: root.player && root.player.isPlaying ? "Ⅱ" : "▶"
             enabled: root.player !== null && root.player.canTogglePlaying
             onClicked: root.player.togglePlaying()
         }
         PlaybackButton {
-            objectName: "nextTrack"; text: "▶|"
+            objectName: "nextTrack";height:root.compact?25:30; text: "▶|"
             enabled: root.player !== null && root.player.canGoNext
             onClicked: root.player.next()
         }
