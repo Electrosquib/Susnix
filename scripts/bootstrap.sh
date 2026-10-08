@@ -50,6 +50,15 @@ while IFS= read -r -d '' config_file; do
         "$config_file" "$HOME_DIR/.config/quickshell/susnix/$relative_path"
 done < <(find "$REPO_DIR/configs/quickshell" -type f ! -name 'README.md' -print0)
 
+# Boot directly into the desktop; SUSNIX_AUTOLOGIN=false keeps password login.
+desktop_start_args=("$TARGET_USER")
+if [[ "${SUSNIX_AUTOLOGIN:-true}" == true ]]; then desktop_start_args+=(--autologin); fi
+if [[ $EUID -eq 0 ]]; then
+    bash "$REPO_DIR/scripts/setup-desktop-start.sh" "${desktop_start_args[@]}"
+else
+    sudo bash "$REPO_DIR/scripts/setup-desktop-start.sh" "${desktop_start_args[@]}"
+fi
+
 if [[ "$VM_MODE" == true ]]; then
     mapfile -t VM_PKGS < <(grep -Ev '^[[:space:]]*(#|$)' "$REPO_DIR/packages/vm.txt")
 
