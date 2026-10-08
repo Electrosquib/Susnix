@@ -290,7 +290,7 @@ explicit top margin aligned with the visible 26px side strip. Setting `exclusive
 which counted the top bar twice and started the sidebar at y=72. The correction
 starts it at the visible right-hand bar edge and stretches it to the screen bottom, while preserving the
 bar's own 36px reservation. On the live 958x994 monitor, Hyprland reports the
-center at x=618, y=26, width=340, height=968. One bar and one center were verified.
+center at x=618, y=25, width=340, height=969 (the 1px outline overlaps the bar edge). One bar and one center were verified.
 QML lint, fresh-start/hover/hide tests, and interrupted open/close animation tests
 pass. The latest changes are `Bar.qml`, `components/ControlCenter.qml`,
 `theme/Theme.qml`, and this README; no new files or dependencies were added.
@@ -561,10 +561,13 @@ animate native scene items rather than repainting every module canvas per frame.
 The control center uses a separate nonmodal layer window so theme/task/bar clicks
 no longer dismiss it. It fills the full screen height below the bar.
 
-The control center now has a 10px top-left fillet derived from the shared bar
-heights. Its glass reflection and outline follow the same curve, with square
-right/bottom corners. The window meets the bar's visible side edge instead of
-leaving the gap between the 26px strip and 36px reserved area. Live geometry and
-a cropped screenshot verified the join; smooth-motion tests and QML lint pass.
-This pass changed `Bar.qml`, `components/ControlCenter.qml`,
+The control center shares the top bar's exact task bevel instead of using an
+independent rounded corner. The task's right edge is passed into the sidebar's
+local coordinate space, so its upper outline follows the taller task section,
+then slopes into the thin status strip. The window overlaps the strip's border
+by `Theme.borderWidth`, aligning both strokes on the same pixel. Its background
+and frame use one silhouette, without a second Rectangle border. The join updates
+when the monitor or task pill changes width. Live screenshots and geometry verify
+the join and flush right/bottom placement; QML lint and interrupted motion tests
+pass. This pass changed `Bar.qml`, `components/ControlCenter.qml`,
 `components/HudBootFrame.qml`, and this README.

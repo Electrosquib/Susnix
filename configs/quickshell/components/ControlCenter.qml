@@ -1,7 +1,7 @@
 import QtQuick
 import "../theme"
 
-Rectangle {
+Item {
     id: root
     signal closeRequested()
     signal settingsRequested()
@@ -13,18 +13,16 @@ Rectangle {
     }
     readonly property real usableHeight: Math.max(1, height - 62)
     readonly property real performanceHeight: Math.min(288, Math.max(1, usableHeight-note.height-launcher.height-40))
-    color: Theme.glass
-    gradient: Gradient {
-        GradientStop { position: 0; color: Qt.alpha(Theme.backgroundRaised, Theme.opacityPanel) }
-        GradientStop { position: .55; color: Qt.alpha(Theme.background, Theme.opacityPanel) }
-        GradientStop { position: 1; color: Qt.alpha(Theme.surface, Theme.opacityPanel) }
-    }
-    radius: 0
-    topLeftRadius: Math.max(Theme.cornerRadius, Theme.barHeight-Theme.barSideHeight)
-    border { width: Theme.borderWidth; color: Qt.alpha(Theme.primary, Theme.opacityBorder) }
+    property real topJoinOffset: -18
     opacity: openProgress
     transform: Translate { x: root.width * (1 - root.openProgress) }
-    HudBootFrame { anchors.fill: parent; topLeftRadius: root.topLeftRadius; z: 20 }
+    HudBootFrame {
+        anchors.fill: parent
+        fillBackground: true
+        topJoinOffset: root.topJoinOffset
+        topJoinDepth: Theme.barHeight-Theme.barSideHeight
+        z: -1
+    }
     Keys.onEscapePressed: root.closeRequested()
     Text { x: 14; y: 12; text: "SUSNIX / CONTROL CENTER"; color: Theme.textMuted; font { family: Theme.fontFamily; pixelSize: 10; letterSpacing: .7 } }
     PanelButton { objectName: "closeControlCenter"; anchors { right: parent.right; rightMargin: 8 } y: 6; width: 28; text: "×"; onClicked: root.closeRequested() }

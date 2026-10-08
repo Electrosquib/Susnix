@@ -64,7 +64,7 @@ PanelWindow {
         anchors { top: true; bottom: true; right: true }
         // Quickshell's margins value has incomplete cross-module lint metadata.
         // qmllint disable unqualified unresolved-type
-        margins { top: Theme.barSideHeight }
+        margins { top: Theme.barSideHeight - Theme.borderWidth }
         // qmllint enable unqualified unresolved-type
         implicitWidth: Math.min(340, Math.max(1, panel.width*.45))
         // Ignore reserved zones; the explicit top margin already accounts for the bar.
@@ -79,6 +79,8 @@ PanelWindow {
             id:controlCenter
             anchors.fill:parent
             opened:panel.controlOpen
+            // Share the exact task bevel, in sidebar-local coordinates.
+            topJoinOffset: currentTask.x + currentTask.width - (panel.width-controlPopup.width)
             onCloseRequested:panel.controlOpen=false
             onSettingsRequested:panel.toggleThemes()
         }

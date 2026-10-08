@@ -8,8 +8,16 @@ Item {
     property real progress: 1
     property bool poweredRail: false
     property real topLeftRadius: 0
+    property bool fillBackground: false
+    // When attached to the bar, these reproduce its 15px task bevel exactly.
+    property real topJoinOffset: -18
+    property real topJoinDepth: 0
+    onTopJoinOffsetChanged: glass.requestPaint()
+    onTopJoinDepthChanged: glass.requestPaint()
+    onFillBackgroundChanged: glass.requestPaint()
     readonly property var accents: [Theme.primary, Theme.secondary, Theme.borderWidth,
-        Theme.glowStrength, Theme.opacityBorder, Theme.opacityGlow, Theme.text]
+        Theme.glowStrength, Theme.opacityBorder, Theme.opacityGlow, Theme.text,
+        Theme.backgroundRaised, Theme.background, Theme.surface, Theme.opacityPanel]
     onTopLeftRadiusChanged: glass.requestPaint()
     HiDpiCanvas {
         id: glass
@@ -28,10 +36,30 @@ Item {
         const radius = Math.min(root.topLeftRadius, width/2, height/2);
         function framePath() {
             ctx.beginPath();
-            ctx.moveTo(inset+radius,inset);ctx.lineTo(width-inset,inset);
+            if (root.topJoinDepth > 0) {
+                const lower = root.topJoinOffset+3;
+                const upper = root.topJoinOffset+18;
+                const depth = x => inset+root.topJoinDepth*Math.max(0,Math.min(1,(upper-x)/15));
+                ctx.moveTo(inset,depth(inset));
+                if (lower > inset && lower < width-inset) ctx.lineTo(lower,depth(lower));
+                if (upper > inset && upper < width-inset) ctx.lineTo(upper,depth(upper));
+                ctx.lineTo(width-inset,depth(width-inset));
+            } else {
+                ctx.moveTo(inset+radius,inset);ctx.lineTo(width-inset,inset);
+            }
             ctx.lineTo(width-inset,height-inset);ctx.lineTo(inset,height-inset);
-            ctx.lineTo(inset,inset+radius);
-            ctx.quadraticCurveTo(inset,inset,inset+radius,inset);ctx.closePath();
+            if (root.topJoinDepth <= 0) {
+                ctx.lineTo(inset,inset+radius);
+                ctx.quadraticCurveTo(inset,inset,inset+radius,inset);
+            }
+            ctx.closePath();
+        }
+        if (root.fillBackground) {
+            const fill = ctx.createLinearGradient(0,0,0,height);
+            fill.addColorStop(0,Qt.alpha(Theme.backgroundRaised,Theme.opacityPanel));
+            fill.addColorStop(.55,Qt.alpha(Theme.background,Theme.opacityPanel));
+            fill.addColorStop(1,Qt.alpha(Theme.surface,Theme.opacityPanel));
+            framePath();ctx.fillStyle=fill;ctx.fill();
         }
         const reflection = ctx.createLinearGradient(0, 0, width, Math.min(height, 42));
         reflection.addColorStop(0, Qt.alpha(Theme.primary, Theme.opacityGlow*Theme.glowStrength*settled));
@@ -54,9 +82,12 @@ Item {
         }
         ctx.lineWidth = Math.max(1, Theme.borderWidth);
         ctx.strokeStyle = Qt.alpha(Theme.text, Theme.opacityGlow*3*Theme.glowStrength*settled);
-        ctx.beginPath();ctx.moveTo(inset, Math.max(12,inset+radius));
+        ctx.beginPath();
+        if (root.topJoinDepth <= 0) {
+        ctx.moveTo(inset, Math.max(12,inset+radius));
         ctx.lineTo(inset,inset+radius);ctx.quadraticCurveTo(inset,inset,inset+radius,inset);
         ctx.lineTo(Math.max(18,inset+radius),inset);
+        }
         ctx.moveTo(width-18, height-inset);ctx.lineTo(width-inset, height-inset);ctx.lineTo(width-inset, height-12);ctx.stroke();
         }
     }
