@@ -58,7 +58,7 @@ local menu        = "hyprlauncher"
 hl.on("hyprland.start", function ()
     hl.exec_cmd("bash \"${XDG_CONFIG_HOME:-$HOME/.config}/quickshell/susnix/bar.sh\" start")
     hl.exec_cmd("test -c /dev/vboxguest && command -v VBoxClient >/dev/null 2>&1 && VBoxClient --vmsvga-session --session-type wayland")
-    hl.exec_cmd("test -c /dev/vboxguest && bash \"${XDG_CONFIG_HOME:-$HOME/.config}/susnix/clipboard.sh\" start")
+    hl.exec_cmd("bash \"${XDG_CONFIG_HOME:-$HOME/.config}/susnix/clipboard.sh\" start")
 end)
 
 

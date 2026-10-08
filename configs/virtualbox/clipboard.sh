@@ -12,18 +12,33 @@ case "$clipboard_action" in
     *) echo "Usage: bash $0 {start|restart|stop|status|logs}" >&2; exit 2 ;;
 esac
 # Harmless on physical machines, SSH sessions, or systems without Guest Additions.
-if [[ ! -c /dev/vboxguest ]] || ! command -v VBoxClient >/dev/null; then exit 0; fi
+if ! command -v VBoxClient >/dev/null; then exit 0; fi
+if [[ ! -c /dev/vboxguest && "$(systemd-detect-virt --vm 2>/dev/null || true)" != oracle ]]; then exit 0; fi
 if [[ -z "${WAYLAND_DISPLAY:-}" || -z "${XDG_RUNTIME_DIR:-}" || -z "${HYPRLAND_INSTANCE_SIGNATURE:-}" ]]; then
     echo 'Start clipboard sharing from the active Hyprland desktop.' >&2
     exit 1
 fi
 clipboard_session="$XDG_RUNTIME_DIR/hypr/$HYPRLAND_INSTANCE_SIGNATURE"
-if [[ ! -r "$clipboard_session/hyprland.lock" ]]; then exit 0; fi
-IFS= read -r clipboard_compositor_pid < "$clipboard_session/hyprland.lock"
-[[ "$clipboard_compositor_pid" =~ ^[0-9]+$ ]] || exit 1
-
 if [[ "$clipboard_action" == run ]]; then
-    kill -0 "$clipboard_compositor_pid" 2>/dev/null || exit 0
+    # hyprland.start can fire before its lock file and Wayland socket are ready.
+    # Queue supervision first, then wait here; a timeout is retried by systemd.
+    echo 'Waiting for the Hyprland clipboard session to become ready.'
+    clipboard_ready=false
+    for ((attempt=0;attempt<300;attempt++)); do
+        clipboard_compositor_pid=""
+        if [[ -c /dev/vboxguest && -S "$XDG_RUNTIME_DIR/$WAYLAND_DISPLAY" && -r "$clipboard_session/hyprland.lock" ]] &&
+            IFS= read -r clipboard_compositor_pid < "$clipboard_session/hyprland.lock" &&
+            [[ "$clipboard_compositor_pid" =~ ^[0-9]+$ ]] &&
+            kill -0 "$clipboard_compositor_pid" 2>/dev/null; then
+            clipboard_ready=true
+            break
+        fi
+        sleep .1
+    done
+    if [[ "$clipboard_ready" != true ]]; then
+        echo 'Hyprland clipboard session is not ready; systemd will retry.' >&2
+        exit 1
+    fi
     # Foreground mode allows systemd to supervise the actual bridge.
     VBoxClient --clipboard --session-type wayland --foreground --verbose &
     clipboard_client_pid=$!
