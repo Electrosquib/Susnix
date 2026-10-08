@@ -41,6 +41,15 @@ No compiled binaries are committed.
   **Ctrl+Shift+F** search, **Ctrl+Shift++/−/0** font zoom/reset, **Ctrl+PageUp/Down** tabs.
 - Files: **Ctrl+L** path, **Ctrl+H** hidden files, **Alt+Left/Right** back/forward,
   **Alt+Up** parent, **F2** rename. Double-click opens a file or folder.
+- **Right-click** the Susnix desktop, desktop folder shortcuts, a file/folder, or
+  empty space in Files to open a six-segment hexagonal menu at the cursor.
+  Hover an outer segment and click its action. **More** opens another six-action
+  page; the center goes back or closes. Click outside or press **Escape** to
+  dismiss. **1–6** activate segments; left/right arrows and Enter also work.
+  File actions use the existing dialogs and refuse overwrites; Trash keeps its
+  confirmation. Desktop Themes exposes all six live palettes. Near screen edges,
+  the menu shifts just enough to remain visible. Third-party apps keep their own
+  context menus. No new dependency or idle animation loop is added.
 
 Manual launch: `~/.local/bin/susnix-terminal` or
 `~/.local/bin/susnix-terminal --working-directory ~/Projects`.
@@ -78,6 +87,9 @@ and an idle inotify watcher reacting to real changes. QML is checked with
 `/usr/lib/qt6/bin/qmllint`; shell/Lua syntax and existing appearance/action tests
 are checked separately. Live Wayland checks cover folder icons, header dragging,
 compact native controls, theme changes, and clean runtime logs.
+`bash tests/test-hex-context-menu.sh` checks the actual menu's mouse input, six
+hit regions, submenu/back behavior, disabled actions, and placement at edges in
+an isolated offscreen Quickshell instance.
 
 The compositor decoration's source, version check, and license are documented in
 [window-controls/README.md](window-controls/README.md).

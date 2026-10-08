@@ -23,7 +23,7 @@ FloatingWindow {
     maximumSize:Qt.size(Math.max(410,availableScreen?availableScreen.width-32:1000),Math.max(300,availableScreen?availableScreen.height-Theme.barHeight-84:640))
     color:Theme.background
     onClosed:DesktopState.filesOpen=false
-    onVisibleChanged:if(visible){DesktopState.recenterFiles();ExplorerService.watch();}
+    onVisibleChanged:if(visible){DesktopState.recenterFiles();ExplorerService.watch();}else contextMenu.close()
     property string viewMode:"Details"
     property string sortBy:"Name"
     property bool descending:false
@@ -32,7 +32,7 @@ FloatingWindow {
     property string typeFilter:"All"
     property string selectedPath:""
     property bool editingPath:false
-    readonly property bool popupOpen:actionDialog.opened||networkDialog.opened||viewMenu.opened||sortMenu.opened||filterMenu.opened||moreMenu.opened
+    readonly property bool popupOpen:contextMenu.opened||actionDialog.opened||networkDialog.opened||viewMenu.opened||sortMenu.opened||filterMenu.opened||moreMenu.opened
     property string dialogAction:""
     property var pending:({})
     readonly property var selected:entries.find(file=>file.path===selectedPath)||null
@@ -68,6 +68,26 @@ FloatingWindow {
     function modified(n: real): string {return Qt.formatDateTime(new Date(n*1000),"MMM d, HH:mm");}
     function open(file: var): void {if(!file)return;if(file.isDir)DesktopState.openFolder(file.path);else DesktopState.openFile(file.url);}
     function select(file: var): void {selectedPath=file.path;ExplorerService.inspect(file.path);}
+    function contextActions(): var {
+        const ready=!ExplorerService.busy, picked=!!selected&&ready;
+        const extra=[
+            {label:"Terminal",icon:"terminal",action:"terminal"},
+            {label:"Code",icon:"editor",action:"code",enabled:picked},
+            {label:"Details",icon:"document",action:"details",enabled:picked},
+            {label:"New folder",icon:"folder",action:"mkdir",enabled:ready},
+            {label:"Refresh",icon:"controls",action:"refresh"},
+            {label:"Hidden files",icon:"settings",action:"hidden"}
+        ];
+        if(!selected)return [extra[3],extra[0],extra[4],extra[5],{label:"Home",icon:"folder",action:"home"},{label:"Up",icon:"folder",action:"up",enabled:DesktopState.folderPath!=="/"}];
+        return [
+            {label:"Open",icon:selected.isDir?"folder":"document",action:"open",enabled:picked},
+            {label:"Copy",icon:"copy",action:"copy",enabled:picked},
+            {label:"Move",icon:"move",action:"move",enabled:picked},
+            {label:"Rename",icon:"editor",action:"rename",enabled:picked},
+            {label:"Trash",icon:"trash",action:"trash",enabled:picked,danger:true},
+            {label:"More",icon:"settings",items:extra}
+        ];
+    }
     function ask(action: string): void {
         if(action!=="mkdir"&&!selected)return;
         dialogAction=action;pending=selected||{}
@@ -82,7 +102,11 @@ FloatingWindow {
     }
     function escapeHtml(value: string): string {return value.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
     Connections {target:root.availableScreen;function onWidthChanged(): void {if(root.visible)DesktopState.recenterFiles();}function onHeightChanged(): void {if(root.visible)DesktopState.recenterFiles();}}
-    Connections {target:DesktopState;function onFolderPathChanged(): void {search.text="";root.selectedPath="";root.editingPath=false;}}
+    Connections {
+        target:DesktopState
+        function onFolderPathChanged(): void {search.text="";root.selectedPath="";root.editingPath=false;contextMenu.close();}
+        function onNewFolderRequested(): void {root.ask("mkdir");}
+    }
     Connections {target:ExplorerService;function onOperationFinished(ok: bool): void {if(ok){ExplorerService.watch();if(root.selected)ExplorerService.inspect(root.selected.path);}}}
     Process {id:windowProcess;stdout:StdioCollector{}stderr:StdioCollector{}}
     Shortcut {sequence:"Escape";enabled:root.visible&&!root.popupOpen;onActivated:if(root.editingPath)root.editingPath=false;else DesktopState.filesOpen=false}
@@ -161,6 +185,14 @@ FloatingWindow {
                     cellWidth:root.viewMode==="Details"?width:Math.max(96,Math.floor(width/Math.max(1,Math.floor(width/(root.viewMode==="Grid"?136:104)))))
                     cellHeight:root.viewMode==="Details"?30:root.viewMode==="Grid"?115:82
                     ScrollBar.vertical:ScrollBar{}
+                    MouseArea {
+                        parent:files;anchors.fill:parent;z:2;acceptedButtons:Qt.RightButton
+                        onClicked: mouse=> {
+                            const index=files.indexAt(mouse.x+files.contentX,mouse.y+files.contentY);
+                            if(index>=0)root.select(root.entries[index]);else root.selectedPath="";
+                            contextMenu.showAt(this,mouse.x,mouse.y,root.contextActions(),root.selected?root.selected.name:"FOLDER");
+                        }
+                    }
                     delegate:AbstractButton {
                         id:fileButton;required property var modelData
                         width:files.cellWidth-2;height:files.cellHeight-2;hoverEnabled:true
@@ -217,6 +249,20 @@ FloatingWindow {
             Layout.fillWidth:true
             Text {text:ExplorerService.busy?"WORKING…":ExplorerService.message||root.entries.length+" ITEMS  ·  "+root.bytes(root.entries.reduce((sum,file)=>sum+file.size,0))+(root.selected?"  ·  1 SELECTED":"");color:Theme.textMuted;font{family:Theme.fontFamily;pixelSize:9}Layout.fillWidth:true;elide:Text.ElideRight}
             Text {visible:!root.compact;text:(ExplorerService.snapshot.branch?ExplorerService.snapshot.branch+"  ·  ":"")+(ExplorerService.snapshot.free===undefined?"":root.bytes(ExplorerService.snapshot.free)+" FREE");color:Theme.textMuted;font{family:Theme.fontFamily;pixelSize:9}}
+        }
+    }
+    HexContextMenu {
+        id:contextMenu
+        onTriggered: action=> {
+            if(action==="open")root.open(root.selected);
+            else if(action==="terminal")DesktopState.terminalHere(root.selected&&root.selected.isDir?root.selected.path:DesktopState.folderPath);
+            else if(action==="code"){if(root.selected&&!LauncherService.editFile(root.selected.path))ExplorerService.message="No editor installed.";}
+            else if(action==="details")root.detailsOpen=true;
+            else if(action==="refresh")ExplorerService.watch();
+            else if(action==="hidden")root.showHidden=!root.showHidden;
+            else if(action==="home")DesktopState.openFolder(DesktopState.home);
+            else if(action==="up")DesktopState.up();
+            else root.ask(action);
         }
     }
     ThemeDialog {

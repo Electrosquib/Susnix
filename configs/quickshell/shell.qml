@@ -44,7 +44,12 @@ ShellRoot {
     AppDrawer { screen: root.focusedMonitor ? Quickshell.screens.find(s => s.name === root.focusedMonitor.name) : Quickshell.screens[0] }
     Variants {
         model: Quickshell.screens
-        DesktopBackground { required property var modelData; screen:modelData }
+        DesktopBackground {
+            required property var modelData; screen:modelData
+            onControlRequested: {
+                for(const panel of bars.instances)if(panel.screen.name===screen.name)panel.controlOpen=true;
+            }
+        }
     }
     Variants {
         model: Quickshell.screens

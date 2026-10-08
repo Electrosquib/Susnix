@@ -9,6 +9,7 @@ Item {
     readonly property string home: Quickshell.env("HOME")
     property bool launcherOpen: false
     property bool filesOpen: false
+    signal newFolderRequested()
     property string folderPath: home
     property var history: []
     property var forwardHistory: []

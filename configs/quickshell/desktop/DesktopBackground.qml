@@ -5,6 +5,7 @@ import Quickshell
 import Quickshell.Wayland
 import "../theme"
 import "../services"
+import "../components"
 
 // qmllint disable uncreatable-type
 PanelWindow {
@@ -15,6 +16,41 @@ PanelWindow {
     WlrLayershell.layer: WlrLayer.Background
     WlrLayershell.namespace: "susnix-desktop"
     color: Theme.background
+    signal controlRequested()
+    WlrLayershell.keyboardFocus: contextMenu.visible ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
+    function contextActions(): var {
+        return [
+            {label:"Files",icon:"folder",action:"files"},
+            {label:"Terminal",icon:"terminal",action:"terminal"},
+            {label:"Applications",icon:"apps",action:"apps"},
+            {label:"Themes",icon:"picture",items:ThemeManager.availableThemes.map(name=>({label:name,icon:"ai",action:"theme:"+name}))},
+            {label:"Control center",icon:"controls",action:"control"},
+            {label:"More",icon:"settings",items:[
+                {label:"Home",icon:"folder",action:"home"},
+                {label:"Desktop",icon:"folder",action:"desktop"},
+                {label:"Downloads",icon:"download",action:"downloads"},
+                {label:"Projects",icon:"terminal",action:"projects"},
+                {label:"New folder",icon:"folder",action:"mkdir"},
+                {label:"Pictures",icon:"picture",action:"pictures"}
+            ]}
+        ];
+    }
+    property string contextPath: DesktopState.locations.find(place=>place.name==="Desktop").path
+    HexContextMenu {
+        id: contextMenu
+        onTriggered: action=> {
+            if(action==="files")DesktopState.openFolder(root.contextPath);
+            else if(action==="terminal")DesktopState.terminalHere(root.contextPath);
+            else if(action==="apps")DesktopState.launcherOpen=true;
+            else if(action==="control")root.controlRequested();
+            else if(action.startsWith("theme:"))ThemeManager.select(action.slice(6));
+            else if(action==="home")DesktopState.openFolder(DesktopState.home);
+            else if(action==="projects")DesktopState.openFolder(DesktopState.home+"/Projects");
+            else if(action==="pictures")DesktopState.openFolder(DesktopState.locations.find(place=>place.name==="Pictures").path);
+            else if(action==="mkdir"){DesktopState.openFolder(root.contextPath);DesktopState.newFolderRequested();}
+            else DesktopState.openFolder(DesktopState.locations.find(place=>place.name===(action==="downloads"?"Downloads":"Desktop")).path);
+        }
+    }
     Image {
         anchors.fill:parent
         source:Qt.resolvedUrl("../assets/desktop/nyx-city.png")
@@ -28,6 +64,14 @@ PanelWindow {
     Rectangle {
         width:Math.min(parent.width*.5,560);height:parent.height
         gradient:Gradient {orientation:Gradient.Horizontal;GradientStop {position:0;color:Qt.alpha(Theme.background,.48)} GradientStop {position:1;color:Theme.transparent}}
+    }
+    MouseArea {
+        anchors.fill:parent
+        acceptedButtons:Qt.RightButton
+        onClicked: mouse=> {
+            root.contextPath=DesktopState.locations.find(place=>place.name==="Desktop").path;
+            contextMenu.showAt(this,mouse.x,mouse.y,root.contextActions(),"DESKTOP");
+        }
     }
     Column {
         x:Math.max(22,root.width*.04);y:Theme.barHeight+28;spacing:7
@@ -53,6 +97,13 @@ PanelWindow {
                 width:88;height:88;hoverEnabled:true
                 Accessible.name:"Open "+modelData.name
                 onClicked:DesktopState.openFolder(modelData.path)
+                MouseArea {
+                    anchors.fill:parent;acceptedButtons:Qt.RightButton
+                    onClicked: mouse=> {
+                        root.contextPath=shortcut.modelData.path;
+                        contextMenu.showAt(this,mouse.x,mouse.y,root.contextActions(),shortcut.modelData.name.toUpperCase());
+                    }
+                }
                 background:Rectangle {
                     radius:Theme.cornerRadius
                     color:shortcut.hovered?Qt.alpha(Theme.surfaceRaised,.85):Theme.transparent
