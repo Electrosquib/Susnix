@@ -16,6 +16,8 @@ PanelWindow {
     WlrLayershell.namespace: "susnix-bar"
     WlrLayershell.keyboardFocus: WlrKeyboardFocus.OnDemand
     property bool controlOpen: false
+    // Stay visible at login until the first hover; subsequent exits use normal autohide.
+    property bool startupRevealed: true
     property bool pointerRevealed: false
     function toggleThemes(): void {
         const open = !logo.expanded;
@@ -29,7 +31,7 @@ PanelWindow {
         });
     }
     onControlOpenChanged: if (controlOpen) { logo.expanded = false; currentTask.historyOpen = false; }
-    readonly property bool controlsRevealed: pointerRevealed || controlOpen || logo.expanded || currentTask.historyOpen || currentTask.editing
+    readonly property bool controlsRevealed: startupRevealed || pointerRevealed || controlOpen || logo.expanded || currentTask.historyOpen || currentTask.editing
     onControlsRevealedChanged: if (controlsRevealed) outline.powerOn()
     property real taskReveal: controlsRevealed || currentTask.pinned ? 1 : 0
     Behavior on taskReveal { NumberAnimation { duration: Theme.animationFast; easing.type: Easing.OutQuart } }
@@ -44,7 +46,7 @@ PanelWindow {
         id: panelHover
         parent: panel.contentItem
         onHoveredChanged: {
-            if (hovered) { collapseDelay.stop(); panel.pointerRevealed = true; }
+            if (hovered) { collapseDelay.stop(); panel.pointerRevealed = true; panel.startupRevealed = false; }
             else collapseDelay.restart();
         }
     }
@@ -61,10 +63,10 @@ PanelWindow {
         id:controlPopup
         screen: panel.screen
         anchors { top: true; bottom: true; right: true }
-        // Margins is registered at runtime but missing from cross-module lint metadata.
-        // qmllint disable missing-type
-        margins: ({top: Theme.barHeight, right: 0, bottom: 0, left: 0})
-        // qmllint enable missing-type
+        // Quickshell's margins value has incomplete cross-module lint metadata.
+        // qmllint disable unqualified unresolved-type
+        margins { top: Theme.barHeight }
+        // qmllint enable unqualified unresolved-type
         implicitWidth: Math.min(340, Math.max(1, panel.width*.45))
         exclusiveZone: 0
         exclusionMode: ExclusionMode.Ignore

@@ -210,6 +210,10 @@ an archived task. Failed writes restore the last saved state and show an error.
 Completion dates are stored as ISO timestamps; the dropdown filters in the
 system's local timezone and refreshes the day at midnight (within 30 seconds).
 
+The bar is visible at login until its first pointer hover. After that, the existing
+350ms hide delay applies when the pointer leaves. This preserves autohide without
+making a successfully autostarted bar appear missing.
+
 The collapsed bar accepts pointer input at the 3px top edge and, when locked,
 the pinned task section. Hover reveals the controls, and leaving waits 350ms before retraction, avoiding flicker when moving between
 controls. Editing and open dropdowns keep it revealed.
