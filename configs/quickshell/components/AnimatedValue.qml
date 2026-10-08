@@ -1,5 +1,6 @@
 import QtQuick
 import "../theme"
+import "../services"
 
 // Two text layers crossfade inside one permanent, measured numeric slot.
 Item {
@@ -14,7 +15,8 @@ Item {
     onTextChanged: {
         oldText = lastText;
         lastText = text;
-        if (oldText && visible && Theme.animationFast > 0) blend.restart();
+        if (oldText && visible && SystemStats.visualActive && Theme.animationFast > 0) blend.restart();
+        else { blend.stop(); progress=1; }
     }
     FontMetrics { id: metrics; font: current.font }
     StatusLabel { anchors.fill: parent; slotText: root.slotText; text: root.oldText; opacity: 1-root.progress }

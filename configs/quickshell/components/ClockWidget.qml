@@ -3,10 +3,12 @@ import Quickshell
 import "../theme"
 
 Row {
+    id:root
+    property bool monitoring:true
     property bool compact: false
     property bool minimal: false
     spacing: minimal ? 0 : 10
-    SystemClock { id: clock; precision: SystemClock.Seconds }
+    SystemClock { id: clock; precision: root.monitoring ? SystemClock.Seconds : SystemClock.Minutes }
     StatusLabel {
         slotText: "MMM 00"
         visible: !parent.compact

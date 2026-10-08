@@ -166,7 +166,7 @@ Item {
         interval: 2000; running: true; repeat: true
         onTriggered: {
             if (!taskFile.loaded && !initialize.running) initialize.running = true;
-            taskFile.reload();
+            if (!taskFile.loaded) taskFile.reload();
         }
     }
 }

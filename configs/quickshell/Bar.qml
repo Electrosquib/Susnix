@@ -184,6 +184,7 @@ PanelWindow {
             }
             StatusArea {
                 id: status
+                monitoring:panel.controlsRevealed
                 anchors { right: parent.right; rightMargin: Theme.padding; verticalCenter: parent.verticalCenter }
                 compact: panel.width < 1100
                 maximumWidth: Math.max(0, (panel.width - Math.min(360, panel.width * 0.30)) / 2 - Theme.padding - 12)

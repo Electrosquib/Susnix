@@ -136,15 +136,16 @@ and `scripts/bootstrap.sh`. New files: `components/HiDpiCanvas.qml`,
 - `components/BarBackground.qml` and `theme/assets/cityscape.png`: a recolorable
   city backdrop inside the existing bar, rather than a desktop wallpaper change.
 - `services/SystemStats.qml`: one shared collector across monitors. CPU comes
-  from `/proc/stat` deltas every second, counting idle plus iowait as idle and
+  from `/proc/stat` deltas every second while the bar is revealed, counting idle plus iowait as idle and
   excluding duplicate guest counters. The first sample displays a dash. Audio
-  uses `wpctl get-volume @DEFAULT_AUDIO_SINK@` every second. NVIDIA utilization
-  and NetworkManager device state update every two seconds. NVIDIA queries fall
+  and NetworkManager state use native event-driven Quickshell services. Supported
+  GPU utilization updates every two seconds; unavailable/virtual providers are
+  retried every 30 seconds. NVIDIA queries fall
   back to AMD's readable `gpu_busy_percent` sysfs counters. Multiple supported
   GPUs show the busiest reading within the selected provider. Virtual drivers
   without a counter show `GPU VM`, failed providers show `GPU ERR`, and other
   unsupported GPUs show a dash. Audio without a sink shows `N/A`; networking shows
-  WiFi, Wired, Online, Offline, or Unavailable.
+  WiFi, Wired, or Offline.
 - `services/collect.sh`: guarded provider commands, two-second timeouts, fixed
   output locale, and safe creation of missing task state. No NVIDIA driver is
   installed by this change.
@@ -336,8 +337,9 @@ The AI card is a static vector placeholder with no model/backend connection.
 Scratch Note keeps plain text while the shell is running, including across popup
 closes. It is intentionally session-only; reload/restart clears it.
 
-System Performance collects real samples every two seconds and keeps up to
-60 minutes in memory. Choose 1m/10m/60m, toggle individual resource lines, and
+System Performance collects detailed real samples every three seconds while open,
+with lightweight aggregate snapshots every 15 seconds while closed. It keeps
+1,800 samples in memory and offers views of the last 1/10/60 minutes. Choose 1m/10m/60m, toggle individual resource lines, and
 hover the graph for timestamps and measured values. History starts with the
 running shell, with no synthetic values or history before startup. CPU/GPU/RAM
 and disk activity use a percentage axis; network uses a separately labeled peak
@@ -593,3 +595,100 @@ at 969px and 500px heights, and the live desktop's empty-player state. Files:
 `components/MusicPlayer.qml` (new), `components/ControlCenter.qml`, and this README.
 When adding a new QML component to an already running installation, use
 `bash ~/.config/quickshell/susnix/bar.sh restart` once to refresh type discovery.
+
+## Desktop controls and reduced idle work
+
+Device Controls sits above the AI placeholder. Everything fits at the live VM
+size and at a 700px panel height; shorter layouts use compact device/music cards.
+Wi-Fi and Bluetooth tiles open bounded device sheets, without scrolling the
+whole control center. Sheets have a Back button and Escape returns to the main
+panel; a second Escape closes it.
+
+- Wi-Fi: adapter toggle, signal/security and connected state, saved connections,
+  open/WPA/WPA2/WPA3 personal network connection with masked password entry,
+  disconnect, and failure messages. Scanning runs only while the network sheet
+  is open. Enterprise networks require a preconfigured NetworkManager profile.
+- Audio: native output volume and mute, output device selection, microphone
+  selection and mute. The bar shares these live values without `wpctl` polling.
+- Bluetooth: power, discovery, paired device connect/disconnect, and a Pair
+  devices button that opens Blueman for PIN/confirmation handling. No custom
+  pairing agent or automatic trust of unknown devices is added.
+- Brightness: backlight slider with hardware/permission detection; updates are
+  committed on release rather than spawning a command per pointer movement.
+- Session: themed Hyprlock plus logout/restart/shutdown. The latter three show
+  an in-panel confirmation. Failures remain visible in the UI.
+
+Packages added to `packages/desktop.txt`: `bluez`, `blueman`, `brightnessctl`, and
+`hyprlock`. Bootstrap enables Bluetooth alongside NetworkManager. On an existing
+installation, install these with:
+
+```bash
+sudo pacman -S --needed bluez blueman brightnessctl hyprlock
+sudo systemctl enable --now bluetooth
+```
+
+The live VM has working audio and wired networking, no Wi-Fi/Bluetooth adapter,
+no backlight, and no installed Hyprlock/Blueman. Sudo requires a password, so
+those package/service changes were prepared but could not be applied unattended.
+Lock configuration is generated temporarily from the selected Theme palette;
+existing Hyprland and lock configuration files are not overwritten.
+
+Idle optimization: native network/audio events replace repeating command
+processes. Detailed per-PID collection stops while closed; aggregate history
+continues every 15 seconds. A single awk reader handles process statistics when
+open. CPU reads and numeric crossfades stop while the bar is hidden. The clock
+uses minute precision while hidden and seconds when revealed. Graphs repaint
+only while open, interpolate briefly at 30fps, and limit vertex count to their
+pixel width. Theme reflections, skyline and existing finite interaction effects
+remain in place. History contains measured snapshots with timestamps, so the
+longer background interval does not create artificial points.
+
+Validation: all QML linted, shell syntax checked, live volume round-trip restored
+the original 40%, fake Wi-Fi verified password/saved/disconnect dispatch, isolated
+MPRIS tested playback and seeking, and device sheets/layouts exercised offscreen.
+`python tests/test-desktop-controls.py` verifies brightness validation, fixed
+session dispatch, Bluetooth paths/methods, and themed temporary lock config.
+Reboot, shutdown, logout, and actual screen locking were not invoked on the
+running desktop. Wi-Fi/Bluetooth/backlight hardware operation cannot be checked
+in this VM.
+
+New files:
+- `configs/quickshell/components/ControlSlider.qml`
+- `configs/quickshell/components/DesktopControls.qml`
+- `configs/quickshell/components/DeviceSheet.qml`
+- `configs/quickshell/services/DesktopService.qml`
+- `configs/quickshell/services/desktop-control.sh`
+- `tests/test-desktop-controls.py`
+
+Modified files:
+- `configs/quickshell/Bar.qml`
+- `configs/quickshell/shell.qml`
+- `configs/quickshell/README.md`
+- `configs/quickshell/components/AnimatedValue.qml`
+- `configs/quickshell/components/ClockWidget.qml`
+- `configs/quickshell/components/ControlCenter.qml`
+- `configs/quickshell/components/Icon.qml`
+- `configs/quickshell/components/MusicPlayer.qml`
+- `configs/quickshell/components/PerformancePanel.qml`
+- `configs/quickshell/components/ResourceGraph.qml`
+- `configs/quickshell/components/StatusArea.qml`
+- `configs/quickshell/services/ResourceMonitor.qml`
+- `configs/quickshell/services/SystemStats.qml`
+- `configs/quickshell/services/TaskService.qml`
+- `configs/quickshell/services/qmldir`
+- `configs/quickshell/services/resource-snapshot.sh`
+- `packages/desktop.txt`
+- `scripts/bootstrap.sh`
+
+Service APIs follow the installed Quickshell 0.3.1 definitions:
+[NetworkManager integration](https://quickshell.org/docs/v0.3.1/types/Quickshell.Networking/WifiNetwork/),
+[PipeWire node binding](https://quickshell.org/docs/v0.3.1/types/Quickshell.Services.Pipewire/PwObjectTracker/),
+[Bluetooth devices](https://quickshell.org/docs/v0.3.1/types/Quickshell.Bluetooth/BluetoothDevice/),
+and [Hyprlock configuration](https://wiki.hypr.land/Hypr-Ecosystem/hyprlock/).
+
+Measured on the live software-rendered VM over quiet 12–15 second intervals,
+Quickshell plus its waited-for collectors used 12.2% of one CPU core with the
+control center closed and 17.7% open before this pass. Final measurements were
+1.8% closed and 7.4% open (roughly 85% and 58% reductions). These are short local
+measurements, not a hardware-wide performance guarantee; total machine CPU also
+includes Hyprland and other applications.
