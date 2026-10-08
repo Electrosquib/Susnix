@@ -118,6 +118,11 @@ class AskTests(unittest.TestCase):
             self.assertEqual(ask.main(['whats', 'the', 'weight', 'of', 'the', 'moon']), 0)
             self.assertEqual(call.call_args.args[0], 'whats the weight of the moon')
 
+    def test_question_mark_is_preserved(self):
+        with patch.object(ask, 'load_settings', return_value=self.settings), patch.object(ask, 'ask') as call:
+            self.assertEqual(ask.main(['whats', 'the', 'weight', 'of', 'the', 'moon?']), 0)
+            self.assertEqual(call.call_args.args[0], 'whats the weight of the moon?')
+
     def test_http_and_network_errors_do_not_leak_secrets(self):
         for code in [400, 401, 402, 403, 404, 429, 500, 302]:
             error = HTTPError('https://api.deepseek.com', code, 'test-key', {}, io.BytesIO(b'test-key'))

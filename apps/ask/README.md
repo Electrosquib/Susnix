@@ -8,9 +8,11 @@ Each invocation sends only its question, with no local files or previous history
 ```bash
 bash scripts/setup-ask.sh
 export PATH="$HOME/.local/bin:$PATH"  # current terminal; new Bash terminals get this automatically
+alias '?'='ask'  # current terminal; new Bash terminals get this automatically
 export DEEPSEEK_API_KEY='your-key'
 ask whats the weight of the moon
 ask "What's the moon's mass?"
+? whats the weight of the moon?
 ask --help
 ```
 
@@ -45,8 +47,12 @@ forwarded to another host. HTTPS is required. Streamed terminal control
 characters are stripped. No automatic retries or duplicated paid requests.
 
 The installer preserves `.bashrc`, appending one idempotent PATH entry, and
-installs `~/.local/bin/ask`. Bootstrap invokes the same installer. Open a new
-Bash terminal after installation or use the PATH export above.
+installs `~/.local/bin/ask` and its `?` symlink. An idempotent Bash alias ensures
+the leading `?` works even when a one-character filename is in the current
+directory (where Bash would otherwise expand it as a wildcard). Bootstrap
+invokes the same installer. Open a new Bash terminal after installation, source
+`~/.bashrc`, or use the PATH export and alias above. Outside Bash, quote the
+command name (`'?' your question`) or configure the same shortcut in your shell.
 
 Validation: `python3 tests/test-ask.py -v` (offline; no API key required).
 Official API/model reference: [DeepSeek API](https://api-docs.deepseek.com/en/).

@@ -10,6 +10,10 @@ ask_home="$(getent passwd "$ask_user" | cut -d: -f6)"
 ask_group="$(id -gn "$ask_user")"
 ask_repo="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd -P)"
 install -Dm0755 -o "$ask_user" -g "$ask_group" "$ask_repo/apps/ask/ask.py" "$ask_home/.local/bin/ask"
+ln -sfn ask "$ask_home/.local/bin/?"
+if [[ $EUID -eq 0 ]]; then
+    chown -h "$ask_user:$ask_group" "$ask_home/.local/bin/?"
+fi
 # Native Susnix Terminal also sources this file. Preserve existing shell setup.
 python3 - "$ask_home/.bashrc" <<'PY'
 from pathlib import Path
@@ -21,8 +25,15 @@ if marker not in old:
     with path.open('a') as file:
         file.write('\n' + marker + '\n')
         file.write('case ":$PATH:" in *":$HOME/.local/bin:"*) ;; *) export PATH="$HOME/.local/bin:$PATH" ;; esac\n')
+# Alias expansion precedes globbing: even a directory containing a one-character
+# filename must treat the command `?` as ask, rather than a filename wildcard.
+alias_marker = '# Susnix question shortcut (protect ? from shell globbing).'
+if alias_marker not in old:
+    with path.open('a') as file:
+        file.write('\n' + alias_marker + '\n')
+        file.write("alias '?'='ask'\n")
 PY
 if [[ $EUID -eq 0 ]]; then
     chown "$ask_user:$ask_group" "$ask_home/.bashrc"
 fi
-echo 'Installed ask. Open a new terminal or run: export PATH="$HOME/.local/bin:$PATH"'
+echo 'Installed ask and ?. Open a new terminal, or source ~/.bashrc to activate both.'

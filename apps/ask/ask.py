@@ -15,7 +15,9 @@ from urllib.request import HTTPRedirectHandler, Request, build_opener
 
 
 HELP = """Usage: ask QUESTION...
+       ? QUESTION...
 Example: ask whats the weight of the moon
+         ? whats the weight of the moon?
 
 Uses DeepSeek V4.1 Flash (deepseek-flash) and streams the answer.
 Export DEEPSEEK_API_KEY in Bash or put it in ~/Desktop/.env.
