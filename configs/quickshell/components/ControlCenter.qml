@@ -12,7 +12,7 @@ Item {
         NumberAnimation { duration: Theme.animationReveal; easing.type: Theme.revealEasing }
     }
     readonly property real usableHeight: Math.max(1, height - 62)
-    readonly property real performanceHeight: Math.min(288, Math.max(1, usableHeight-note.height-launcher.height-40))
+    readonly property real performanceHeight: Math.min(288, Math.max(1, usableHeight-note.height-launcher.height-music.height-64))
     property real topJoinOffset: -18
     opacity: openProgress
     transform: Translate { x: root.width * (1 - root.openProgress) }
@@ -28,7 +28,8 @@ Item {
     PanelButton { objectName: "closeControlCenter"; anchors { right: parent.right; rightMargin: 8 } y: 6; width: 28; text: "×"; onClicked: root.closeRequested() }
     Column {
         x: 8; y: 36; width: parent.width - 16; spacing: 6
-        AiPlaceholder { id: ai; objectName:"aiPlaceholder"; width: parent.width; height: Math.max(40, root.usableHeight-note.height-launcher.height-root.performanceHeight); compact: true }
+        AiPlaceholder { id: ai; objectName:"aiPlaceholder"; width: parent.width; height: Math.max(40, root.usableHeight-note.height-launcher.height-root.performanceHeight-music.height-6); compact: true }
+        MusicPlayer { id: music; objectName: "musicPlayer"; width: parent.width; height: 96; monitoring: root.opened }
         ScratchNote { id: note; objectName:"scratchNote"; width: parent.width; height: root.height < 570 ? 40 : Math.min(72, Math.max(46, root.usableHeight * .10)) }
         PerformancePanel {
             objectName:"performancePanel"

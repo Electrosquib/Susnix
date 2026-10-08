@@ -571,3 +571,23 @@ when the monitor or task pill changes width. Live screenshots and geometry verif
 the join and flush right/bottom placement; QML lint and interrupted motion tests
 pass. This pass changed `Bar.qml`, `components/ControlCenter.qml`,
 `components/HudBootFrame.qml`, and this README.
+
+## Music player
+
+The control center places a 96px music card directly below the AI placeholder,
+reducing the placeholder by 102px including spacing. The performance area yields
+space on shorter screens so all modules remain visible without scrolling.
+`components/MusicPlayer.qml` uses the built-in
+[Quickshell MPRIS service](https://quickshell.org/docs/v0.3.1/types/Quickshell.Services.Mpris/MprisPlayer/)
+without extra packages or shell commands. It selects playing media first, then
+an available paused player, and shows artwork, title/artist, elapsed time,
+progress, and previous/play-pause/next controls. Unsupported controls are disabled;
+when no player is available it shows “Nothing playing”. All styling uses Theme
+properties, including the shared media category color. Position polling runs
+once a second while the control center is open and media is playing.
+
+Validated QML, isolated D-Bus player discovery/metadata/playback commands, layouts
+at 969px and 500px heights, and the live desktop's empty-player state. Files:
+`components/MusicPlayer.qml` (new), `components/ControlCenter.qml`, and this README.
+When adding a new QML component to an already running installation, use
+`bash ~/.config/quickshell/susnix/bar.sh restart` once to refresh type discovery.
