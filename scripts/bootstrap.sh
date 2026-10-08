@@ -59,6 +59,10 @@ else
     sudo bash "$REPO_DIR/scripts/setup-desktop-start.sh" "${desktop_start_args[@]}"
 fi
 
+# User-session clipboard supervision needs no system-wide service or root at login.
+install -D -m 0644 -o "$TARGET_USER" -g "$TARGET_GROUP" \
+    "$REPO_DIR/configs/virtualbox/clipboard.sh" "$HOME_DIR/.config/susnix/clipboard.sh"
+
 if [[ "$VM_MODE" == true ]]; then
     mapfile -t VM_PKGS < <(grep -Ev '^[[:space:]]*(#|$)' "$REPO_DIR/packages/vm.txt")
 

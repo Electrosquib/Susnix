@@ -28,3 +28,34 @@ To disable tty1 desktop startup, remove the Susnix source line from `~/.bash_pro
 
 References: [Hyprland launch instructions](https://wiki.hypr.land/Getting-Started/Master-Tutorial/),
 [agetty automatic login](https://man7.org/linux/man-pages/man8/agetty.8.html).
+
+## VirtualBox clipboard startup
+
+Hyprland starts `~/.config/susnix/clipboard.sh` once at desktop login. Bootstrap
+installs this helper from `configs/virtualbox/clipboard.sh`. The launcher replaces
+legacy clipboard clients from earlier desktop sessions, then creates the user
+service `susnix-clipboard.service` with foreground VBoxClient and crash recovery.
+It passes the current Wayland/Hyprland environment explicitly and ends the bridge
+when that compositor process exits. Every new login starts a fresh connection,
+rather than accepting “already running” from a stale client. Display resizing
+clients are preserved. Non-VirtualBox machines skip this startup.
+
+Manual recovery and logs (normally unnecessary):
+
+```bash
+bash ~/.config/susnix/clipboard.sh restart
+bash ~/.config/susnix/clipboard.sh logs
+```
+
+Validated shell/Lua syntax, live Wayland clipboard initialization, automatic
+recovery after terminating the clipboard client, and repeat startup with exactly
+one clipboard client tied to the current compositor. No reboot or host-side
+Windows clipboard round trip was performed. VirtualBox must have shared clipboard
+enabled on the host; Susnix cannot change the host VM setting from inside the guest.
+
+Files: `configs/virtualbox/clipboard.sh` (new), `configs/hypr/hyprland.lua`,
+`scripts/bootstrap.sh`, and this README. No additional packages or sudo were needed
+for the current user installation. The installed Hyprland config remains linked
+to the repository.
+
+Reference: [VirtualBox's Wayland clipboard implementation](https://github.com/VirtualBox/virtualbox/issues/33).
