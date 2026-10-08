@@ -46,6 +46,9 @@ The foreground VBoxClient connection is supervised and restarted after failure;
 when a compositor exits, the watcher reconnects to the next desktop session.
 The Hyprland hook also requests a restart of this installed service. The helper
 retains transient service startup for older installations without the user unit.
+Before each connection, both startup paths stop only this user’s older clipboard
+clients and clear their stale PID files. The watcher waits for the unprivileged
+`/dev/vboxuser` device to become accessible, avoiding a Guest Additions boot race.
 Display resizing clients are preserved. Non-VirtualBox machines skip startup.
 
 Manual recovery and logs (normally unnecessary):
@@ -57,7 +60,8 @@ bash ~/.config/susnix/clipboard.sh logs
 
 Validated delayed startup using `python tests/test-clipboard-startup.py` (inside
 a VirtualBox guest), including missing and empty session PID files, startup with
-no inherited display environment, and rejection of non-compositor session PIDs. Also checked
+no inherited display environment, rejection of non-compositor session PIDs,
+retiring a legacy clipboard client, and reconnecting after a compositor restart. Also checked
 shell/Lua syntax, live Wayland clipboard initialization, automatic
 recovery after terminating the clipboard client, and repeat startup with exactly
 one clipboard client tied to the current compositor. No reboot or host-side

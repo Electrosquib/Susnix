@@ -15,6 +15,45 @@ esac
 if ! command -v VBoxClient >/dev/null; then exit 0; fi
 if [[ ! -c /dev/vboxguest && "$(systemd-detect-virt --vm 2>/dev/null || true)" != oracle ]]; then exit 0; fi
 
+# Both startup paths must claim clipboard ownership before launching a bridge.
+# A surviving X11/Wayland client can otherwise report "already running" forever.
+stop_old_clipboard_clients() {
+    local old_pid old_arg old_alive attempt
+    local -a old_args old_pids=()
+    while IFS= read -r old_pid; do
+        [[ -r "/proc/$old_pid/cmdline" ]] || continue
+        mapfile -d '' -t old_args < "/proc/$old_pid/cmdline" || continue
+        for old_arg in "${old_args[@]}"; do
+            if [[ "$old_arg" == --clipboard ]]; then
+                old_pids+=("$old_pid")
+                kill "$old_pid" 2>/dev/null || true
+                break
+            fi
+        done
+    done < <(pgrep -u "$UID" -x VBoxClient || true)
+    for ((attempt=0;attempt<30;attempt++)); do
+        old_alive=false
+        for old_pid in "${old_pids[@]}"; do
+            # Zombies have released the clipboard and cannot be killed again.
+            if kill -0 "$old_pid" 2>/dev/null &&
+                [[ "$(ps -o stat= -p "$old_pid" 2>/dev/null || true)" != Z* ]]; then
+                old_alive=true
+            fi
+        done
+        [[ "$old_alive" == false ]] && break
+        sleep .1
+    done
+    if [[ "$old_alive" == true ]]; then
+        echo 'Old clipboard client did not stop; retrying ownership handoff.' >&2
+        return 1
+    fi
+    local old_file
+    for old_file in "$HOME"/.vboxclient-clipboard*.pid; do
+        [[ -f "$old_file" && -O "$old_file" ]] && rm -f -- "$old_file"
+    done
+    return 0
+}
+
 # The installed service starts at login, before Hyprland supplies any display
 # environment. Discover the compositor from its own lock file, not a stale
 # systemd manager environment or a hardcoded wayland-0 socket.
@@ -34,10 +73,10 @@ if [[ "$clipboard_action" == watch ]]; then
             IFS= read -r clipboard_comm < "/proc/$clipboard_pid/comm" || continue
             [[ "$clipboard_comm" == Hyprland ]] || continue
             clipboard_signature="$(basename -- "$(dirname -- "$clipboard_lock")")"
-            # Clean stale VirtualBox clipboard PID files before reconnecting.
-            for clipboard_pid_file in "$HOME"/.vboxclient-clipboard*.pid; do
-                [[ -f "$clipboard_pid_file" && -O "$clipboard_pid_file" ]] && rm -f -- "$clipboard_pid_file"
-            done
+            # Wait for the unprivileged Guest Additions device too. It can be
+            # created after the compositor during boot; never start half-ready.
+            [[ -r /dev/vboxuser && -w /dev/vboxuser ]] || continue
+            stop_old_clipboard_clients || continue
             echo "Connecting clipboard to $clipboard_signature ($clipboard_display)."
             WAYLAND_DISPLAY="$clipboard_display" HYPRLAND_INSTANCE_SIGNATURE="$clipboard_signature" \
                 XDG_SESSION_TYPE=wayland bash "$clipboard_script" run &
@@ -68,7 +107,7 @@ if [[ "$clipboard_action" == run ]]; then
     clipboard_ready=false
     for ((attempt=0;attempt<300;attempt++)); do
         clipboard_compositor_pid=""
-        if [[ -c /dev/vboxguest && -S "$XDG_RUNTIME_DIR/$WAYLAND_DISPLAY" && -r "$clipboard_session/hyprland.lock" ]] &&
+        if [[ -c /dev/vboxguest && -r /dev/vboxuser && -w /dev/vboxuser && -S "$XDG_RUNTIME_DIR/$WAYLAND_DISPLAY" && -r "$clipboard_session/hyprland.lock" ]] &&
             IFS= read -r clipboard_compositor_pid < "$clipboard_session/hyprland.lock" &&
             [[ "$clipboard_compositor_pid" =~ ^[0-9]+$ ]] &&
             kill -0 "$clipboard_compositor_pid" 2>/dev/null; then
@@ -107,34 +146,7 @@ exec 9>"$clipboard_runtime/clipboard.lock"
 flock 9
 # Stop supervision first, then remove only this user's legacy clipboard clients.
 systemctl --user stop "$clipboard_unit" 2>/dev/null || true
-clipboard_pids=()
-while IFS= read -r clipboard_pid; do
-    [[ -r "/proc/$clipboard_pid/cmdline" ]] || continue
-    mapfile -d '' -t clipboard_args < "/proc/$clipboard_pid/cmdline" || continue
-    for clipboard_arg in "${clipboard_args[@]}"; do
-        if [[ "$clipboard_arg" == --clipboard ]]; then
-            clipboard_pids+=("$clipboard_pid")
-            kill "$clipboard_pid" 2>/dev/null || true
-            break
-        fi
-    done
-done < <(pgrep -u "$UID" -x VBoxClient || true)
-for ((attempt=0;attempt<30;attempt++)); do
-    clipboard_alive=false
-    for clipboard_pid in "${clipboard_pids[@]}"; do
-        if kill -0 "$clipboard_pid" 2>/dev/null; then clipboard_alive=true; fi
-    done
-    [[ "$clipboard_alive" == false ]] && break
-    sleep .1
-done
-if [[ "$clipboard_alive" == true ]]; then
-    echo 'Old clipboard client did not stop; inspect clipboard logs.' >&2
-    exit 1
-fi
-# PID files may contain old service/session locks, never other VBoxClient services.
-for clipboard_pid_file in "$HOME"/.vboxclient-clipboard*.pid; do
-    [[ -f "$clipboard_pid_file" && -O "$clipboard_pid_file" ]] && rm -f -- "$clipboard_pid_file"
-done
+stop_old_clipboard_clients
 clipboard_env=(--setenv="WAYLAND_DISPLAY=$WAYLAND_DISPLAY" --setenv="XDG_RUNTIME_DIR=$XDG_RUNTIME_DIR"
     --setenv="HYPRLAND_INSTANCE_SIGNATURE=$HYPRLAND_INSTANCE_SIGNATURE" --setenv=XDG_SESSION_TYPE=wayland
     --setenv="PATH=$PATH")

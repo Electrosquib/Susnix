@@ -21,9 +21,13 @@ class ClipboardStartup(unittest.TestCase):
             client=bin_dir/'VBoxClient'
             client.write_text('#!/usr/bin/python\nimport os,time\nfrom pathlib import Path\nPath(os.environ["CLIPBOARD_TEST_MARKER"]).write_text(os.environ["WAYLAND_DISPLAY"]+"/"+os.environ["HYPRLAND_INSTANCE_SIGNATURE"])\ntime.sleep(60)\n')
             client.chmod(0o755)
+            (bin_dir/'pgrep').write_text('#!/bin/sh\n[ -n \"$CLIPBOARD_TEST_LEGACY_PID\" ] && echo \"$CLIPBOARD_TEST_LEGACY_PID\"\nexit 0\n')
+            (bin_dir/'pgrep').chmod(0o755)
+            legacy=subprocess.Popen(['python','-c','import ctypes,time; ctypes.CDLL(None).prctl(15,b"VBoxClient",0,0,0); time.sleep(60)','--clipboard'])
             env=os.environ.copy()
+            env['CLIPBOARD_TEST_LEGACY_PID']=str(legacy.pid)
             for name in ('WAYLAND_DISPLAY','HYPRLAND_INSTANCE_SIGNATURE','DISPLAY'):env.pop(name,None)
-            env.update(PATH=str(bin_dir)+':'+env['PATH'],XDG_RUNTIME_DIR=str(root),CLIPBOARD_TEST_MARKER=str(marker))
+            env.update(HOME=str(root),PATH=str(bin_dir)+':'+env['PATH'],XDG_RUNTIME_DIR=str(root),CLIPBOARD_TEST_MARKER=str(marker))
             compositor=subprocess.Popen(['python','-c','import ctypes,time; ctypes.CDLL(None).prctl(15,b"Hyprland",0,0,0); time.sleep(60)'])
             server=socket.socket(socket.AF_UNIX)
             process=subprocess.Popen(['bash',str(HELPER),'watch'],env=env,text=True,stdout=subprocess.PIPE,stderr=subprocess.STDOUT,start_new_session=True)
@@ -41,10 +45,23 @@ class ClipboardStartup(unittest.TestCase):
                 while not marker.exists() and time.monotonic()<deadline:time.sleep(.05)
                 self.assertEqual(marker.read_text(),'wayland-7/new-login')
                 self.assertIsNone(process.poll())
+                legacy.wait(timeout=2)
+                self.assertEqual(legacy.returncode,-signal.SIGTERM,
+                                 'watcher failed to retire the legacy bridge')
+                # A second compositor must get a fresh clipboard connection.
+                marker.unlink()
+                compositor.terminate();compositor.wait(timeout=5)
+                compositor=subprocess.Popen(['python','-c','import ctypes,time; ctypes.CDLL(None).prctl(15,b"Hyprland",0,0,0); time.sleep(60)'])
+                time.sleep(.1)
+                (session/'hyprland.lock').write_text(str(compositor.pid)+'\nwayland-7\n')
+                deadline=time.monotonic()+8
+                while not marker.exists() and time.monotonic()<deadline:time.sleep(.05)
+                self.assertEqual(marker.read_text(),'wayland-7/new-login')
             finally:
                 os.killpg(process.pid,signal.SIGTERM)
                 output=process.communicate(timeout=5)[0]
                 compositor.terminate();compositor.wait(timeout=5);server.close()
+                if legacy.poll() is None:legacy.terminate();legacy.wait(timeout=5)
             self.assertIn('Watching for an active Hyprland session',output)
             self.assertEqual(process.returncode,0)
 
@@ -57,7 +74,7 @@ class ClipboardStartup(unittest.TestCase):
             client=bin_dir/'VBoxClient'
             client.write_text('#!/usr/bin/python\nimport os,time\nfrom pathlib import Path\nPath(os.environ["CLIPBOARD_TEST_MARKER"]).write_text("started")\ntime.sleep(60)\n')
             client.chmod(0o755)
-            env=os.environ.copy();env.update(PATH=str(bin_dir)+':'+env['PATH'],XDG_RUNTIME_DIR=str(root),WAYLAND_DISPLAY='wayland-test',HYPRLAND_INSTANCE_SIGNATURE='delayed-session',CLIPBOARD_TEST_MARKER=str(marker))
+            env=os.environ.copy();env.update(HOME=str(root),PATH=str(bin_dir)+':'+env['PATH'],XDG_RUNTIME_DIR=str(root),WAYLAND_DISPLAY='wayland-test',HYPRLAND_INSTANCE_SIGNATURE='delayed-session',CLIPBOARD_TEST_MARKER=str(marker))
             server=socket.socket(socket.AF_UNIX);server.bind(str(root/'wayland-test'))
             process=subprocess.Popen(['bash',str(HELPER),'run'],env=env,text=True,stdout=subprocess.PIPE,stderr=subprocess.STDOUT,start_new_session=True)
             try:
