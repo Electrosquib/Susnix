@@ -29,7 +29,7 @@ Item {
     Column {
         x: 8; y: 36; width: parent.width - 16; spacing: 6
         AiPlaceholder { id: ai; objectName:"aiPlaceholder"; width: parent.width; height: Math.max(40, root.usableHeight-note.height-launcher.height-root.performanceHeight-music.height-6); compact: true }
-        MusicPlayer { id: music; objectName: "musicPlayer"; width: parent.width; height: 96; monitoring: root.opened }
+        MusicPlayer { id: music; objectName: "musicPlayer"; width: parent.width; height: implicitHeight; monitoring: root.opened }
         ScratchNote { id: note; objectName:"scratchNote"; width: parent.width; height: root.height < 570 ? 40 : Math.min(72, Math.max(46, root.usableHeight * .10)) }
         PerformancePanel {
             objectName:"performancePanel"
