@@ -13,7 +13,9 @@ QtObject {
     function commandFor(app: var): var {
         // Quickshell execute ignores Terminal=true; wrap terminal apps explicitly.
         const terminal=["bash",Qt.resolvedUrl("open-terminal.sh").toString().replace(/^file:\/\//,"")];
-        return app.runInTerminal ? terminal.concat(["-e"],app.command) : app.command[0]==="foot" ? terminal.concat(app.command.slice(1)) : app.command;
+        if(app.runInTerminal)return terminal.concat(["-e"],app.command);
+        const program=app.command[0].split("/").pop();
+        return app.command.length===1&&["foot","susnix-terminal"].includes(program)?terminal:app.command;
     }
     function launch(app: var): bool {
         if(!app || !app.command.length) { error="Application is unavailable";return false; }

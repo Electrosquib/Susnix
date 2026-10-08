@@ -19,7 +19,7 @@ PanelWindow {
     WlrLayershell.layer:WlrLayer.Top
     readonly property var pins:[
         {name:"Applications",icon:"apps",category:"media",action:"apps"},
-        {name:"Terminal",icon:"terminal",category:"dev",app:LauncherService.entry(["foot","kitty"],"TerminalEmulator")},
+        {name:"Terminal",icon:"terminal",category:"dev",app:LauncherService.entry(["susnix-terminal","foot","kitty"],"TerminalEmulator")},
         {name:"Files",icon:"folder",category:"ai",action:"files"},
         {name:"Browser",icon:"browser",category:"browser",app:LauncherService.entry(["firefox","chromium"],"WebBrowser")},
         {name:"Editor",icon:"editor",category:"dev",app:LauncherService.entry(["code","codium","vim"],"TextEditor")},

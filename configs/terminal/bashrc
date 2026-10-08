@@ -1,0 +1,21 @@
+# Susnix-owned interactive startup; keep the user's existing aliases and setup.
+[[ -r "$HOME/.bashrc" ]] && source "$HOME/.bashrc"
+[[ $- == *i* ]] || return
+# Indexed semantic colors recolor existing prompts when the global palette changes.
+# Escapes are non-printing so Readline wraps long commands correctly.
+PS1='\[\e[34m\]\u\[\e[35m\]@\[\e[34m\]\h:\w\[\e[0m\]\$ '
+alias susfetch='python "$SUSNIX_TERMINAL_ASSETS/susfetch.py"'
+# Report the actual directory in the tab title using OSC 0.
+susnix_terminal_title() {
+    printf '\033]0;%s : bash\007' "${PWD/#$HOME/~}"
+}
+# Append without losing user prompt hooks; preserve arrays and scalar commands.
+if declare -p PROMPT_COMMAND 2>/dev/null | command grep -q 'declare -a'; then
+    PROMPT_COMMAND+=(susnix_terminal_title)
+else
+    PROMPT_COMMAND="${PROMPT_COMMAND:+$PROMPT_COMMAND; }susnix_terminal_title"
+fi
+if [[ -z ${SUSNIX_TERMINAL_WELCOME_SHOWN:-} ]]; then
+    export SUSNIX_TERMINAL_WELCOME_SHOWN=1
+    python "$SUSNIX_TERMINAL_ASSETS/susfetch.py"
+fi

@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=Susnix Terminal
+Comment=Cyberpunk terminal with native shell sessions
+Exec=susnix-terminal
+Icon=utilities-terminal
+Terminal=false
+Categories=System;TerminalEmulator;
+Keywords=shell;console;terminal;
+StartupWMClass=susnix-terminal

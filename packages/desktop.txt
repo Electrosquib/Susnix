@@ -22,3 +22,4 @@ xdg-user-dirs
 firefox
 imv
 mpv
+qtermwidget

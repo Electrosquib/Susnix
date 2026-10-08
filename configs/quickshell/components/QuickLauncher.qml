@@ -10,7 +10,7 @@ PanelCard {
     signal settingsRequested()
     implicitHeight:62
     readonly property var pins:[
-        {name:"Terminal",icon:"terminal",entry:LauncherService.entry(["foot","kitty","Alacritty"],"TerminalEmulator"),category:"dev"},
+        {name:"Terminal",icon:"terminal",entry:LauncherService.entry(["susnix-terminal","foot","kitty","Alacritty"],"TerminalEmulator"),category:"dev"},
         {name:"Files",icon:"folder",category:"system",action:"files"},
         {name:"Browser",icon:"browser",entry:LauncherService.entry(["firefox","chromium","brave-browser"],"WebBrowser"),category:"browser"},
         {name:"ChatGPT",icon:"ai",entry:LauncherService.entry([],"WebBrowser"),category:"ai",action:"ai"},
