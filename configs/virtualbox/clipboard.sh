@@ -8,12 +8,54 @@ case "$clipboard_action" in
     status) exec systemctl --user status "$clipboard_unit" ;;
     logs) exec journalctl --user -u "$clipboard_unit" -n 40 --no-pager ;;
     stop) exec systemctl --user stop "$clipboard_unit" ;;
-    start|restart|run) ;;
+    start|restart|run|watch) ;;
     *) echo "Usage: bash $0 {start|restart|stop|status|logs}" >&2; exit 2 ;;
 esac
 # Harmless on physical machines, SSH sessions, or systems without Guest Additions.
 if ! command -v VBoxClient >/dev/null; then exit 0; fi
 if [[ ! -c /dev/vboxguest && "$(systemd-detect-virt --vm 2>/dev/null || true)" != oracle ]]; then exit 0; fi
+
+# The installed service starts at login, before Hyprland supplies any display
+# environment. Discover the compositor from its own lock file, not a stale
+# systemd manager environment or a hardcoded wayland-0 socket.
+if [[ "$clipboard_action" == watch ]]; then
+    : "${XDG_RUNTIME_DIR:?The clipboard service needs a user runtime directory}"
+    clipboard_child=""
+    trap 'if [[ -n "$clipboard_child" ]]; then kill "$clipboard_child" 2>/dev/null || true; wait "$clipboard_child" 2>/dev/null || true; fi' EXIT
+    trap 'exit 0' TERM INT
+    echo 'Watching for an active Hyprland session.'
+    while true; do
+        for clipboard_lock in "$XDG_RUNTIME_DIR"/hypr/*/hyprland.lock; do
+            [[ -f "$clipboard_lock" && -O "$clipboard_lock" ]] || continue
+            clipboard_pid=""; clipboard_display=""
+            { IFS= read -r clipboard_pid && IFS= read -r clipboard_display; } < "$clipboard_lock" || continue
+            [[ "$clipboard_pid" =~ ^[0-9]+$ && "$clipboard_display" =~ ^wayland-[0-9]+$ ]] || continue
+            [[ -O "/proc/$clipboard_pid" && -r "/proc/$clipboard_pid/comm" && -S "$XDG_RUNTIME_DIR/$clipboard_display" ]] || continue
+            IFS= read -r clipboard_comm < "/proc/$clipboard_pid/comm" || continue
+            [[ "$clipboard_comm" == Hyprland ]] || continue
+            clipboard_signature="$(basename -- "$(dirname -- "$clipboard_lock")")"
+            # Clean stale VirtualBox clipboard PID files before reconnecting.
+            for clipboard_pid_file in "$HOME"/.vboxclient-clipboard*.pid; do
+                [[ -f "$clipboard_pid_file" && -O "$clipboard_pid_file" ]] && rm -f -- "$clipboard_pid_file"
+            done
+            echo "Connecting clipboard to $clipboard_signature ($clipboard_display)."
+            WAYLAND_DISPLAY="$clipboard_display" HYPRLAND_INSTANCE_SIGNATURE="$clipboard_signature" \
+                XDG_SESSION_TYPE=wayland bash "$clipboard_script" run &
+            clipboard_child=$!
+            wait "$clipboard_child" || true
+            clipboard_child=""
+            break
+        done
+        sleep 2
+    done
+fi
+
+# Prefer the enabled, persistent login service. The transient path below remains
+# available for checkouts installed before the user unit was introduced.
+if [[ "$clipboard_action" == start || "$clipboard_action" == restart ]] &&
+    [[ "$(systemctl --user show "$clipboard_unit" -p FragmentPath --value 2>/dev/null || true)" == */systemd/user/susnix-clipboard.service ]]; then
+    exec systemctl --user restart "$clipboard_unit"
+fi
 if [[ -z "${WAYLAND_DISPLAY:-}" || -z "${XDG_RUNTIME_DIR:-}" || -z "${HYPRLAND_INSTANCE_SIGNATURE:-}" ]]; then
     echo 'Start clipboard sharing from the active Hyprland desktop.' >&2
     exit 1

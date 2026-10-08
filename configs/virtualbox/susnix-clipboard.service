@@ -1,0 +1,14 @@
+[Unit]
+Description=Susnix VirtualBox clipboard sharing
+ConditionVirtualization=oracle
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/bash %h/.config/susnix/clipboard.sh watch
+Environment=XDG_RUNTIME_DIR=%t
+Restart=always
+RestartSec=2s
+TimeoutStopSec=5s
+
+[Install]
+WantedBy=default.target

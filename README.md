@@ -31,17 +31,18 @@ References: [Hyprland launch instructions](https://wiki.hypr.land/Getting-Starte
 
 ## VirtualBox clipboard startup
 
-Hyprland starts `~/.config/susnix/clipboard.sh` once at desktop login. Bootstrap
-installs this helper from `configs/virtualbox/clipboard.sh`. The launcher replaces
-legacy clipboard clients from earlier desktop sessions, then creates the user
-service `susnix-clipboard.service` with foreground VBoxClient and crash recovery.
-The supervised service waits for the Wayland socket, guest device, and Hyprland
-session PID file before launching VBoxClient; boot-time missing or empty files
-do not cause a silent exit. Readiness timeouts are retried automatically.
-It passes the current Wayland/Hyprland environment explicitly and ends the bridge
-when that compositor process exits. Every new login starts a fresh connection,
-rather than accepting “already running” from a stale client. Display resizing
-clients are preserved. Non-VirtualBox machines skip this startup.
+Bootstrap installs and enables the persistent user service
+`configs/virtualbox/susnix-clipboard.service` under `default.target`. It starts
+at user login, independently of the Hyprland autostart hook, using
+`~/.config/susnix/clipboard.sh watch`. It discovers the current display from an
+owned Hyprland lock file and validates the compositor PID and Wayland socket.
+Missing display environment, late compositor startup, and missing or empty
+session files keep the service waiting instead of silently skipping startup.
+The foreground VBoxClient connection is supervised and restarted after failure;
+when a compositor exits, the watcher reconnects to the next desktop session.
+The Hyprland hook also requests a restart of this installed service. The helper
+retains transient service startup for older installations without the user unit.
+Display resizing clients are preserved. Non-VirtualBox machines skip startup.
 
 Manual recovery and logs (normally unnecessary):
 
@@ -51,16 +52,17 @@ bash ~/.config/susnix/clipboard.sh logs
 ```
 
 Validated delayed startup using `python tests/test-clipboard-startup.py` (inside
-a VirtualBox guest), including missing and empty session PID files. Also checked
+a VirtualBox guest), including missing and empty session PID files, startup with
+no inherited display environment, and rejection of non-compositor session PIDs. Also checked
 shell/Lua syntax, live Wayland clipboard initialization, automatic
 recovery after terminating the clipboard client, and repeat startup with exactly
 one clipboard client tied to the current compositor. No reboot or host-side
 Windows clipboard round trip was performed. VirtualBox must have shared clipboard
 enabled on the host; Susnix cannot change the host VM setting from inside the guest.
 
-Files: `configs/virtualbox/clipboard.sh` (new), `configs/hypr/hyprland.lua`,
-`scripts/bootstrap.sh`, `tests/test-clipboard-startup.py` (new boot-race regression
-test), and this README. No additional packages or sudo were needed
+Files: `configs/virtualbox/clipboard.sh`,
+`configs/virtualbox/susnix-clipboard.service`, `scripts/bootstrap.sh`,
+`tests/test-clipboard-startup.py`, and this README. No additional packages or sudo were needed
 for the current user installation. The installed Hyprland config remains linked
 to the repository.
 

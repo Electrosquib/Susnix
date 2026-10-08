@@ -62,6 +62,16 @@ fi
 # User-session clipboard supervision needs no system-wide service or root at login.
 install -D -m 0644 -o "$TARGET_USER" -g "$TARGET_GROUP" \
     "$REPO_DIR/configs/virtualbox/clipboard.sh" "$HOME_DIR/.config/susnix/clipboard.sh"
+install -D -m 0644 -o "$TARGET_USER" -g "$TARGET_GROUP" \
+    "$REPO_DIR/configs/virtualbox/susnix-clipboard.service" \
+    "$HOME_DIR/.config/systemd/user/susnix-clipboard.service"
+# Enable offline too: no running user manager or display environment is needed.
+install -d -m 0755 -o "$TARGET_USER" -g "$TARGET_GROUP" \
+    "$HOME_DIR/.config/systemd/user/default.target.wants"
+ln -sfn ../susnix-clipboard.service \
+    "$HOME_DIR/.config/systemd/user/default.target.wants/susnix-clipboard.service"
+chown -h "$TARGET_USER:$TARGET_GROUP" \
+    "$HOME_DIR/.config/systemd/user/default.target.wants/susnix-clipboard.service"
 
 if [[ "$VM_MODE" == true ]]; then
     mapfile -t VM_PKGS < <(grep -Ev '^[[:space:]]*(#|$)' "$REPO_DIR/packages/vm.txt")

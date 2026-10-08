@@ -13,6 +13,42 @@ HELPER=Path(__file__).resolve().parents[1]/'configs/virtualbox/clipboard.sh'
 
 class ClipboardStartup(unittest.TestCase):
     @unittest.skipUnless(Path('/dev/vboxguest').exists(), 'requires a VirtualBox guest')
+    def test_login_service_discovers_display_without_inherited_environment(self):
+        with tempfile.TemporaryDirectory(prefix='susnix-clipboard-login-') as directory:
+            root=Path(directory);bin_dir=root/'bin';bin_dir.mkdir()
+            session=root/'hypr'/'new-login';session.mkdir(parents=True)
+            marker=root/'client-started'
+            client=bin_dir/'VBoxClient'
+            client.write_text('#!/usr/bin/python\nimport os,time\nfrom pathlib import Path\nPath(os.environ["CLIPBOARD_TEST_MARKER"]).write_text(os.environ["WAYLAND_DISPLAY"]+"/"+os.environ["HYPRLAND_INSTANCE_SIGNATURE"])\ntime.sleep(60)\n')
+            client.chmod(0o755)
+            env=os.environ.copy()
+            for name in ('WAYLAND_DISPLAY','HYPRLAND_INSTANCE_SIGNATURE','DISPLAY'):env.pop(name,None)
+            env.update(PATH=str(bin_dir)+':'+env['PATH'],XDG_RUNTIME_DIR=str(root),CLIPBOARD_TEST_MARKER=str(marker))
+            compositor=subprocess.Popen(['python','-c','import ctypes,time; ctypes.CDLL(None).prctl(15,b"Hyprland",0,0,0); time.sleep(60)'])
+            server=socket.socket(socket.AF_UNIX)
+            process=subprocess.Popen(['bash',str(HELPER),'watch'],env=env,text=True,stdout=subprocess.PIPE,stderr=subprocess.STDOUT,start_new_session=True)
+            try:
+                time.sleep(.3)
+                self.assertIsNone(process.poll(),'login watcher exited without a desktop environment')
+                self.assertFalse(marker.exists())
+                # Ignore stale lock files, including live PIDs that are not Hyprland.
+                (session/'hyprland.lock').write_text(str(os.getpid())+'\nwayland-7\n')
+                server.bind(str(root/'wayland-7'))
+                time.sleep(2.2)
+                self.assertFalse(marker.exists(),'watcher selected a non-compositor PID')
+                (session/'hyprland.lock').write_text(str(compositor.pid)+'\nwayland-7\n')
+                deadline=time.monotonic()+5
+                while not marker.exists() and time.monotonic()<deadline:time.sleep(.05)
+                self.assertEqual(marker.read_text(),'wayland-7/new-login')
+                self.assertIsNone(process.poll())
+            finally:
+                os.killpg(process.pid,signal.SIGTERM)
+                output=process.communicate(timeout=5)[0]
+                compositor.terminate();compositor.wait(timeout=5);server.close()
+            self.assertIn('Watching for an active Hyprland session',output)
+            self.assertEqual(process.returncode,0)
+
+    @unittest.skipUnless(Path('/dev/vboxguest').exists(), 'requires a VirtualBox guest')
     def test_waits_for_missing_and_empty_session_file(self):
         with tempfile.TemporaryDirectory(prefix='susnix-clipboard-boot-') as directory:
             root=Path(directory);bin_dir=root/'bin';bin_dir.mkdir()
