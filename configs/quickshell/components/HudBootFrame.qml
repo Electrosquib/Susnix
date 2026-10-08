@@ -7,8 +7,10 @@ Item {
     id: root
     property real progress: 1
     property bool poweredRail: false
+    property real topLeftRadius: 0
     readonly property var accents: [Theme.primary, Theme.secondary, Theme.borderWidth,
         Theme.glowStrength, Theme.opacityBorder, Theme.opacityGlow, Theme.text]
+    onTopLeftRadiusChanged: glass.requestPaint()
     HiDpiCanvas {
         id: glass
         anchors.fill: parent
@@ -23,12 +25,22 @@ Item {
             ctx.clearRect(0, 0, width, height);
         const inset = Math.max(.5, Theme.borderWidth/2);
         const settled = 1;
+        const radius = Math.min(root.topLeftRadius, width/2, height/2);
+        function framePath() {
+            ctx.beginPath();
+            ctx.moveTo(inset+radius,inset);ctx.lineTo(width-inset,inset);
+            ctx.lineTo(width-inset,height-inset);ctx.lineTo(inset,height-inset);
+            ctx.lineTo(inset,inset+radius);
+            ctx.quadraticCurveTo(inset,inset,inset+radius,inset);ctx.closePath();
+        }
         const reflection = ctx.createLinearGradient(0, 0, width, Math.min(height, 42));
         reflection.addColorStop(0, Qt.alpha(Theme.primary, Theme.opacityGlow*Theme.glowStrength*settled));
         reflection.addColorStop(.35, Qt.alpha(Theme.text, Theme.opacityGlow*.4*Theme.glowStrength*settled));
         reflection.addColorStop(.65, Theme.transparent);
         reflection.addColorStop(1, Qt.alpha(Theme.secondary, Theme.opacityGlow*.35*Theme.glowStrength*settled));
+        ctx.save();framePath();ctx.clip();
         ctx.fillStyle = reflection; ctx.fillRect(inset, inset, width-2*inset, Math.min(20, height-2*inset));
+        ctx.restore();
         // Static polished edge: restrained reflection, bright corners, no idle loop.
         const shine = ctx.createLinearGradient(0, 0, width, height);
         shine.addColorStop(0, Qt.alpha(Theme.primary, Theme.opacityBorder*settled));
@@ -38,11 +50,13 @@ Item {
         for (let stroke=3;stroke>=1;stroke--) {
             ctx.lineWidth = Theme.borderWidth+(stroke-1)*2;
             ctx.strokeStyle = stroke===1 ? shine : Qt.alpha(Theme.primary, Theme.opacityGlow*Theme.glowStrength*settled/stroke);
-            ctx.strokeRect(inset, inset, width-2*inset, height-2*inset);
+            framePath();ctx.stroke();
         }
         ctx.lineWidth = Math.max(1, Theme.borderWidth);
         ctx.strokeStyle = Qt.alpha(Theme.text, Theme.opacityGlow*3*Theme.glowStrength*settled);
-        ctx.beginPath();ctx.moveTo(inset, 12);ctx.lineTo(inset, inset);ctx.lineTo(18, inset);
+        ctx.beginPath();ctx.moveTo(inset, Math.max(12,inset+radius));
+        ctx.lineTo(inset,inset+radius);ctx.quadraticCurveTo(inset,inset,inset+radius,inset);
+        ctx.lineTo(Math.max(18,inset+radius),inset);
         ctx.moveTo(width-18, height-inset);ctx.lineTo(width-inset, height-inset);ctx.lineTo(width-inset, height-12);ctx.stroke();
         }
     }

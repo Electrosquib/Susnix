@@ -286,11 +286,11 @@ shards, module boot stages, or whole-bar ignition pulses; glass outlines remain
 static. Resource graphs still interpolate real measurement updates.
 
 The control-center window ignores other panels' reserved zones and uses one
-explicit top margin. Setting `exclusiveZone` was resetting its exclusion mode,
+explicit top margin aligned with the visible 26px side strip. Setting `exclusiveZone` was resetting its exclusion mode,
 which counted the top bar twice and started the sidebar at y=72. The correction
-starts it at y=36 and stretches it to the screen bottom, while preserving the
+starts it at the visible right-hand bar edge and stretches it to the screen bottom, while preserving the
 bar's own 36px reservation. On the live 958x994 monitor, Hyprland reports the
-center at x=618, y=36, width=340, height=958. One bar and one center were verified.
+center at x=618, y=26, width=340, height=968. One bar and one center were verified.
 QML lint, fresh-start/hover/hide tests, and interrupted open/close animation tests
 pass. The latest changes are `Bar.qml`, `components/ControlCenter.qml`,
 `theme/Theme.qml`, and this README; no new files or dependencies were added.
@@ -322,8 +322,8 @@ Manual toggle: `bash ~/.config/quickshell/susnix/bar.sh control`.
 After installing the shortcut, run `hyprctl reload` once. The binding is defined
 in `configs/hypr/hyprland.lua`; shell IPC routes it to the focused monitor without
 launching a duplicate checkout/installed bar.
-An independent layer panel hugs the right edge, from immediately below the 36px
-top bar to the bottom of the screen. Its width is the smaller of 340px or 45% of
+An independent layer panel hugs the right edge, from immediately below the 26px
+right-hand bar strip to the bottom of the screen. Its width is the smaller of 340px or 45% of
 the monitor width. Bar/desktop clicks keep it open; Escape, ×, the sliders button
 and Super+A close it. It adapts to
 the monitor height and fits all four main cards without scrolling. The graph
@@ -560,3 +560,11 @@ reflection canvases paint only on size/theme changes; opening edges and scans
 animate native scene items rather than repainting every module canvas per frame.
 The control center uses a separate nonmodal layer window so theme/task/bar clicks
 no longer dismiss it. It fills the full screen height below the bar.
+
+The control center now has a 10px top-left fillet derived from the shared bar
+heights. Its glass reflection and outline follow the same curve, with square
+right/bottom corners. The window meets the bar's visible side edge instead of
+leaving the gap between the 26px strip and 36px reserved area. Live geometry and
+a cropped screenshot verified the join; smooth-motion tests and QML lint pass.
+This pass changed `Bar.qml`, `components/ControlCenter.qml`,
+`components/HudBootFrame.qml`, and this README.

@@ -64,7 +64,7 @@ PanelWindow {
         anchors { top: true; bottom: true; right: true }
         // Quickshell's margins value has incomplete cross-module lint metadata.
         // qmllint disable unqualified unresolved-type
-        margins { top: Theme.barHeight }
+        margins { top: Theme.barSideHeight }
         // qmllint enable unqualified unresolved-type
         implicitWidth: Math.min(340, Math.max(1, panel.width*.45))
         // Ignore reserved zones; the explicit top margin already accounts for the bar.
