@@ -34,6 +34,8 @@ References: [Hyprland launch instructions](https://wiki.hypr.land/Getting-Starte
 The cyberpunk desktop, folder browser and dock are documented in
 [the desktop implementation notes](configs/quickshell/desktop/README.md),
 including launch commands, generated assets, validation and the exact file list.
+The native terminal, Files operations, compact window controls, and VM pointer
+settings are documented in [the application notes](apps/README.md).
 
 ## VirtualBox clipboard startup
 
