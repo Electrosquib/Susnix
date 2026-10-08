@@ -2,6 +2,9 @@ import QtQuick
 import QtQuick.Controls
 import "../theme"
 Menu {
+    implicitWidth:220
+    font.family:Theme.fontFamily
+    font.pixelSize:11
     palette.window:Theme.surfaceRaised
     palette.base:Theme.surface
     palette.text:Theme.text

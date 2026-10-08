@@ -1,8 +1,6 @@
 pragma ComponentBehavior: Bound
 import QtQuick
-import Quickshell
 import "../theme"
-import "../services"
 import "../components"
 
 Item {
@@ -26,9 +24,7 @@ Item {
     }
     Item {
         id:glyph;anchors.horizontalCenter:parent.horizontalCenter;y:12;width:42;height:42
-        readonly property bool themed:!!root.item.icon&&Quickshell.hasThemeIcon(root.item.icon)
-        Image {anchors.fill:parent;visible:glyph.themed;source:glyph.themed?Quickshell.iconPath(root.item.icon):"";sourceSize:Qt.size(84,84);asynchronous:true}
-        Icon {anchors.fill:parent;visible:!glyph.themed;effectsEnabled:false;name:root.item.kind==="folder"||root.item.isDir?"folder":root.item.kind==="file"?"document":root.item.fallback||"apps";color:LauncherModel.tint(root.item.category||"System")}
+        LauncherIcon {anchors.fill:parent;item:root.item}
         Rectangle {visible:root.item.kind==="folder";anchors{right:parent.right;bottom:parent.bottom}width:20;height:16;radius:3;color:Theme.surfaceRaised;Text{anchors.centerIn:parent;text:root.item.folder?root.item.folder.apps.length:"";color:Theme.primary;font{family:Theme.fontFamily;pixelSize:9}}}
     }
     Text {x:5;y:64;width:parent.width-10;text:root.item.name;color:Theme.text;font{family:Theme.fontFamily;pixelSize:11}horizontalAlignment:Text.AlignHCenter;elide:Text.ElideRight}
@@ -40,7 +36,7 @@ Item {
         Drag.keys:["susnix-app"]
         Drag.hotSpot.x:width/2;Drag.hotSpot.y:height/2
         Rectangle {anchors.fill:parent;radius:Theme.cornerRadius;color:Qt.alpha(Theme.surfaceRaised,.9);border{width:1;color:Theme.primary}}
-        Icon {anchors.centerIn:parent;width:36;height:36;name:"apps";effectsEnabled:false;color:Theme.primary}
+        LauncherIcon {anchors.centerIn:parent;width:36;height:36;item:root.item}
     }
     MouseArea {
         id:mouse;anchors.fill:parent;hoverEnabled:true;acceptedButtons:Qt.LeftButton|Qt.RightButton
@@ -49,6 +45,7 @@ Item {
         onReleased:{if(drag.active)dragGhost.Drag.drop();dragGhost.x=0;dragGhost.y=0;}
         onCanceled:{dragGhost.Drag.cancel();dragGhost.x=0;dragGhost.y=0;}
     }
+    ThemeToolTip {visible:mouse.containsMouse&&!mouse.drag.active;text:root.item.path||root.item.name;delay:600}
     DropArea {
         id:drop;anchors.fill:parent;keys:["susnix-app"]
         onDropped:event=>{const source=event.source as LauncherTile;if(source&&source.item.kind==="app"){root.appDropped(source.item.id,root.item);event.acceptProposedAction();}}

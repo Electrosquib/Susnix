@@ -34,7 +34,7 @@ PanelWindow {
     Connections {target:DesktopState;function onLauncherOpenChanged(): void {if(DesktopState.launcherOpen){root.group="All";root.expandedFolder="";root.selectedApp=null;search.text="";LauncherModel.prepare(root.screen?root.screen.name:"");}else {actions.close();hideDelay.restart();}}}
     Connections {target:LauncherModel;function onSettingsChanged(): void {if(root.expandedFolder&&!LauncherModel.settings.folders.some(f=>f.id===root.expandedFolder))root.expandedFolder="";}function onBackdropReadyChanged(): void {if(LauncherModel.backdropReady&&DesktopState.launcherOpen)Qt.callLater(()=>search.forceActiveFocus());}}
     Timer {id:hideDelay;interval:Theme.animationFast}
-    Shortcut {sequence:"Escape";enabled:root.visible;onActivated:if(actions.opened)actions.close();else if(search.text)search.clear();else root.close()}
+    Shortcut {sequence:"Escape";enabled:root.visible&&!renameFolder.opened;onActivated:if(actions.opened)actions.close();else if(search.text)search.clear();else root.close()}
     Item {
         id:veil;anchors.fill:parent
         opacity:DesktopState.launcherOpen&&LauncherModel.backdropReady?1:0
@@ -62,7 +62,7 @@ PanelWindow {
                     placeholderText:"Search apps, files, commands…";color:Theme.text;placeholderTextColor:Theme.textMuted;selectByMouse:true
                     font{family:Theme.fontFamily;pixelSize:15}
                     background:Rectangle{radius:Theme.cornerRadius+4;color:Qt.alpha(Theme.backgroundRaised,.8);border{width:Theme.borderWidth;color:search.activeFocus?Qt.alpha(Theme.primary,.65):Theme.border}}
-                    onTextChanged:{LauncherModel.search(text);results.currentIndex=0;root.selectedApp=null;}
+                    onTextChanged:{if(text.trim()||root.group==="Files")LauncherModel.search(text);else LauncherModel.cancelSearch();results.currentIndex=0;root.selectedApp=null;}
                     onAccepted:{if(root.searchMode&&root.matches.length)LauncherModel.open(root.matches[Math.max(0,results.currentIndex)]);else if(LauncherModel.favorites.length)LauncherModel.open(LauncherModel.favorites[0]);}
                     Keys.onDownPressed:{if(root.matches.length)results.currentIndex=Math.min(root.matches.length-1,results.currentIndex+1);}
                     Keys.onUpPressed:{if(root.matches.length)results.currentIndex=Math.max(0,results.currentIndex-1);}
@@ -77,7 +77,7 @@ PanelWindow {
                                 required property string modelData
                                 width:parent.width;height:34;text:modelData==="Development"?"Dev":modelData==="Installed Apps"?"App info":modelData
                                 tint:root.group===modelData?Theme.primary:Theme.textMuted
-                                onClicked:{root.group=modelData;root.expandedFolder="";root.selectedApp=null;if(modelData==="Files"||root.searchMode)LauncherModel.search(search.text);results.currentIndex=0;}
+                                onClicked:{LauncherModel.notice="";root.group=modelData;root.expandedFolder="";root.selectedApp=null;if(modelData==="Files"||root.searchMode)LauncherModel.search(search.text);else LauncherModel.cancelSearch();results.currentIndex=0;}
                             }}
                             Rectangle {width:parent.width;height:1;color:Qt.alpha(Theme.border,.5)}
                             Text {width:parent.width;text:"Drag apps together\nto create a folder.\n\nDrag favorites\nto reorder.";color:Theme.textMuted;wrapMode:Text.Wrap;font{family:Theme.fontFamily;pixelSize:9}lineHeight:1.4}
@@ -145,7 +145,7 @@ PanelWindow {
                                     color:results.currentIndex===row.index?Qt.alpha(Theme.primary,.1):resultMouse.containsMouse?Qt.alpha(Theme.surfaceRaised,.7):Theme.transparent
                                     border{width:1;color:results.currentIndex===row.index?Qt.alpha(Theme.primary,.35):Theme.transparent}
                                     RowLayout {anchors.fill:parent;anchors.margins:10;spacing:12
-                                        Icon {name:row.modelData.kind==="app"?"apps":row.modelData.kind==="file"?(row.modelData.isDir?"folder":"document"):row.modelData.icon;effectsEnabled:false;color:LauncherModel.tint(row.modelData.category||"System");Layout.preferredWidth:24;Layout.preferredHeight:24}
+                                        LauncherIcon {item:row.modelData;Layout.preferredWidth:24;Layout.preferredHeight:24}
                                         ColumnLayout {Layout.fillWidth:true;spacing:4
                                             Text {text:row.modelData.name;color:Theme.text;Layout.fillWidth:true;elide:Text.ElideRight;font{family:Theme.fontFamily;pixelSize:12}}
                                             Text {text:row.modelData.path||row.modelData.description||row.modelData.category||"";color:Theme.textMuted;Layout.fillWidth:true;elide:Text.ElideMiddle;font{family:Theme.fontFamily;pixelSize:10}}
@@ -192,5 +192,5 @@ PanelWindow {
         MenuItem {text:"Rename app folder";visible:!!root.contextItem&&root.contextItem.kind==="folder";height:visible?implicitHeight:0;onTriggered:{folderName.text=root.contextItem.name;renameFolder.open();}}
         MenuItem {text:"Ungroup apps";visible:!!root.contextItem&&root.contextItem.kind==="folder";height:visible?implicitHeight:0;onTriggered:{LauncherModel.ungroup(root.contextItem.id);root.expandedFolder="";}}
     }
-    ThemeDialog {id:renameFolder;width:Math.min(360,root.width-32);anchors.centerIn:parent;title:"App folder name";standardButtons:Dialog.Ok|Dialog.Cancel;modal:true;contentItem:TextField{id:folderName;color:Theme.text;selectByMouse:true}onAccepted:LauncherModel.renameFolder(root.contextItem.id,folderName.text)}
+    ThemeDialog {id:renameFolder;width:Math.min(360,root.width-32);anchors.centerIn:parent;title:"App folder name";standardButtons:Dialog.Ok|Dialog.Cancel;modal:true;onOpened:{folderName.forceActiveFocus();folderName.selectAll();}contentItem:TextField{id:folderName;color:Theme.text;selectByMouse:true;onAccepted:renameFolder.accept()}onAccepted:LauncherModel.renameFolder(root.contextItem.id,folderName.text)}
 }

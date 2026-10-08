@@ -94,7 +94,7 @@ not ready: the bar helper retries readiness and dispatches the toggle once.
 ## Implementation files
 
 Created: `apps/launcher/backdrop.cpp`, this README,
-`configs/quickshell/desktop/LauncherTile.qml`,
+`configs/quickshell/desktop/{LauncherTile.qml,LauncherIcon.qml}`,
 `configs/quickshell/services/LauncherModel.qml`,
 `configs/quickshell/services/launcher-backend.py`, `scripts/setup-launcher.sh`,
 `tests/test-launcher-backend.py`, `tests/test-launcher-ipc.py`.
@@ -110,3 +110,18 @@ drag/reorder/group persistence, metadata, clipboard paths, editor routing,
 workspace launch, resolution changes, scrolling and palette switching.
 Privileged updates and audio restarts are tested with fake providers so checks
 do not update packages or interrupt the user's audio.
+
+## Desktop polish audit
+
+Browse, search and drag previews share the same monitor-aware app/folder glyph.
+Hover reveals full tile names and paths. Hidden/zero-size SVGs are not rendered.
+Files menus have a shared readable width; dialogs inherit the semantic palette.
+Escape dismisses a Files popup before closing the window, and cancelled path
+edits reset to the current directory when reopened. Folder rename selects its
+text and accepts Enter.
+
+Launcher busy actions keep the overlay open, stale notices clear when changing
+views, and blank browse queries cancel indexing. Long queries retain their full
+Web/AI prompt while file matching uses the first 160 characters. Changing file
+search roots invalidates the cache immediately. App metadata failures display
+an error instead of remaining in “Reading…” state.

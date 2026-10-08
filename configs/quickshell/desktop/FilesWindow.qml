@@ -32,6 +32,7 @@ FloatingWindow {
     property string typeFilter:"All"
     property string selectedPath:""
     property bool editingPath:false
+    readonly property bool popupOpen:actionDialog.opened||networkDialog.opened||viewMenu.opened||sortMenu.opened||filterMenu.opened||moreMenu.opened
     property string dialogAction:""
     property var pending:({})
     readonly property var selected:entries.find(file=>file.path===selectedPath)||null
@@ -62,6 +63,7 @@ FloatingWindow {
         if(path===DesktopState.home+"/Projects"||path===DesktopState.home+"/susnix"||path===DesktopState.home+"/Radar")return "terminal";
         return "";
     }
+    function editPath(): void {pathInput.text=DesktopState.folderPath;root.editingPath=true;pathInput.forceActiveFocus();pathInput.selectAll();}
     function bytes(n: real): string {if(n<1024)return n+" B";if(n<1048576)return (n/1024).toFixed(1)+" KB";if(n<1073741824)return (n/1048576).toFixed(1)+" MB";return (n/1073741824).toFixed(1)+" GB";}
     function modified(n: real): string {return Qt.formatDateTime(new Date(n*1000),"MMM d, HH:mm");}
     function open(file: var): void {if(!file)return;if(file.isDir)DesktopState.openFolder(file.path);else DesktopState.openFile(file.url);}
@@ -83,8 +85,8 @@ FloatingWindow {
     Connections {target:DesktopState;function onFolderPathChanged(): void {search.text="";root.selectedPath="";root.editingPath=false;}}
     Connections {target:ExplorerService;function onOperationFinished(ok: bool): void {if(ok){ExplorerService.watch();if(root.selected)ExplorerService.inspect(root.selected.path);}}}
     Process {id:windowProcess;stdout:StdioCollector{}stderr:StdioCollector{}}
-    Shortcut {sequence:"Escape";enabled:root.visible&&!actionDialog.opened;onActivated:if(root.editingPath)root.editingPath=false;else DesktopState.filesOpen=false}
-    Shortcut {sequence:"Ctrl+L";enabled:root.visible;onActivated:{root.editingPath=true;pathInput.forceActiveFocus();pathInput.selectAll();}}
+    Shortcut {sequence:"Escape";enabled:root.visible&&!root.popupOpen;onActivated:if(root.editingPath)root.editingPath=false;else DesktopState.filesOpen=false}
+    Shortcut {sequence:"Ctrl+L";enabled:root.visible;onActivated:{root.editPath();}}
     Shortcut {sequence:"Alt+Left";enabled:root.visible;onActivated:DesktopState.back()}
     Shortcut {sequence:"Alt+Right";enabled:root.visible;onActivated:DesktopState.forward()}
     Shortcut {sequence:"Alt+Up";enabled:root.visible;onActivated:DesktopState.up()}
@@ -113,14 +115,14 @@ FloatingWindow {
             Layout.fillWidth:true;spacing:6
             Rectangle {
                 Layout.fillWidth:true;Layout.preferredHeight:30;color:Theme.surface;border{width:1;color:Qt.alpha(Theme.border,.6)}radius:Theme.cornerRadius;clip:true
-                MouseArea {anchors.fill:parent;onClicked:{root.editingPath=true;pathInput.forceActiveFocus();pathInput.selectAll();}}
+                MouseArea {anchors.fill:parent;onClicked:{root.editPath();}}
                 Flickable {
                     anchors.fill:parent;anchors.margins:3;visible:!root.editingPath;contentWidth:crumbs.width;contentHeight:height;clip:true
                     Row {id:crumbs;height:parent.height;spacing:1
                         Repeater {model:root.breadcrumbs;delegate:PanelButton {required property var modelData;text:modelData.name+" ›";height:24;tint:DesktopState.folderPath===modelData.path?Theme.primary:Theme.textMuted;onClicked:DesktopState.openFolder(modelData.path)}}
                     }
                 }
-                MouseArea {visible:!root.editingPath;x:Math.min(crumbs.width+6,parent.width);width:Math.max(0,parent.width-x);height:parent.height;onClicked:{root.editingPath=true;pathInput.forceActiveFocus();pathInput.selectAll();}}
+                MouseArea {visible:!root.editingPath;x:Math.min(crumbs.width+6,parent.width);width:Math.max(0,parent.width-x);height:parent.height;onClicked:{root.editPath();}}
                 TextField {id:pathInput;anchors.fill:parent;visible:root.editingPath;text:DesktopState.folderPath;color:Theme.text;selectByMouse:true;font{family:Theme.fontFamily;pixelSize:11}background:Item{}onAccepted:{let next=text.replace(/^~/,DesktopState.home);if(next.startsWith("/")){DesktopState.openFolder(next);root.editingPath=false;}}}
             }
             TextField {id:search;Layout.preferredWidth:root.compact?110:180;Layout.preferredHeight:30;placeholderText:"Search folder";color:Theme.text;placeholderTextColor:Theme.textMuted;font{family:Theme.fontFamily;pixelSize:10}background:Rectangle{color:Theme.surface;border{width:1;color:Qt.alpha(Theme.border,.5)}}}

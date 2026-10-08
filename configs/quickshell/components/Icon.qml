@@ -51,7 +51,7 @@ Item {
     Image {
         id: glyph
         anchors.fill: parent
-        source: "data:image/svg+xml," + encodeURIComponent("<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='" + root.strokeColor + "' stroke-opacity='" + root.color.a + "' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'>" + (root.paths[root.name] || "") + "</svg>")
+        source: root.visible && width>0 && height>0 ? "data:image/svg+xml," + encodeURIComponent("<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='" + root.strokeColor + "' stroke-opacity='" + root.color.a + "' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'>" + (root.paths[root.name] || "") + "</svg>") : ""
         opacity: hover.hovered ? 1 : 1 - Theme.opacityGlow
         Behavior on opacity { NumberAnimation { duration: Theme.animationFast; easing.type: Easing.OutCubic } }
         sourceSize.width: Math.ceil(width * Math.max(2, Window.window ? Window.window.devicePixelRatio : 1))

@@ -34,7 +34,7 @@ PanelCard {
         x:10; y:root.compact?8:28; width:parent.width-20; spacing:6
         DeviceTile {
             width:(parent.width-parent.spacing)/2; height:root.compact?34:42
-            title:"Wi-Fi"; icon:"wifi"; powered:DesktopService.wifiEnabled && DesktopService.wifi!==null; available:DesktopService.wifi!==null
+            title:DesktopService.wifi?"Wi-Fi":SystemStats.network==="Wired"?"Ethernet":"Network"; icon:DesktopService.wifi?"wifi":"network"; powered:DesktopService.wifi?DesktopService.wifiEnabled:SystemStats.network==="Wired"; available:DesktopService.wifi!==null
             subtitle:DesktopService.wifi ? DesktopService.wifiEnabled ? (DesktopService.networks.find(n=>n.connected)?.name || "Disconnected") : "Off" : SystemStats.network === "Wired" ? "Wired connection" : "No Wi-Fi adapter"
             onOpenRequested:DesktopService.details="network"
             onToggleRequested:DesktopService.toggleWifi()

@@ -21,11 +21,11 @@ Item {
         sourceSize.width: Math.ceil(width * Math.max(2, Window.window ? Window.window.devicePixelRatio : 1))
         sourceSize.height: Math.ceil(height * Math.max(2, Window.window ? Window.window.devicePixelRatio : 1))
         opacity: Theme.glowStrength * (root.frame % 3 === 1 ? 0.5 : 1) * (1 - root.phase * 0.6)
-        source: "data:image/svg+xml," + encodeURIComponent(
+        source: root.visible && width>0 && height>0 ? "data:image/svg+xml," + encodeURIComponent(
             "<svg xmlns='http://www.w3.org/2000/svg' viewBox='" + root.viewBox + "' fill='none' stroke-linecap='square' stroke-linejoin='miter'>" +
             "<g stroke='" + root.strokeColor + "' stroke-opacity='" + root.tint.a + "' stroke-width='2.2' stroke-dasharray='3 17 1 11' stroke-dashoffset='" + (-root.frame * 9) + "'>" + root.paths + "</g>" +
             "<g stroke='" + Theme.text + "' stroke-width='.8' stroke-dasharray='1 31' stroke-dashoffset='" + (-root.frame * 9 - 2) + "'>" + root.paths + "</g>" +
-            "<g stroke='" + Theme.secondary + "' stroke-width='1.2' stroke-dasharray='2 27' stroke-dashoffset='" + (-root.frame * 9 + 4) + "'>" + root.paths + "</g></svg>")
+            "<g stroke='" + Theme.secondary + "' stroke-width='1.2' stroke-dasharray='2 27' stroke-dashoffset='" + (-root.frame * 9 + 4) + "'>" + root.paths + "</g></svg>") : ""
     }
     NumberAnimation {
         id: discharge
