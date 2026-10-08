@@ -36,6 +36,10 @@ mapfile -t DESKTOP_PKGS < <(grep -Ev '^[[:space:]]*(#|$)' "$REPO_DIR/packages/de
 
 "${SYSTEMCTL[@]}" enable NetworkManager bluetooth
 
+# Native terminal: use the distro Qt/QTermWidget packages, not bundled binaries.
+bash "$REPO_DIR/scripts/setup-terminal.sh" "$TARGET_USER"
+bash "$REPO_DIR/scripts/setup-window-controls.sh" "$TARGET_USER"
+
 # Standard personal folders, using the user's XDG paths when configured.
 if [[ $EUID -eq 0 ]]; then
     runuser -u "$TARGET_USER" -- xdg-user-dirs-update
@@ -55,7 +59,7 @@ while IFS= read -r -d '' config_file; do
     relative_path="${config_file#"$REPO_DIR/configs/quickshell/"}"
     install -D -m 0644 -o "$TARGET_USER" -g "$TARGET_GROUP" \
         "$config_file" "$HOME_DIR/.config/quickshell/susnix/$relative_path"
-done < <(find "$REPO_DIR/configs/quickshell" -type f ! -name 'README.md' -print0)
+done < <(find "$REPO_DIR/configs/quickshell" -type f ! -name 'README.md' ! -path '*/__pycache__/*' -print0)
 
 # Boot directly into the desktop; SUSNIX_AUTOLOGIN=false keeps password login.
 desktop_start_args=("$TARGET_USER")

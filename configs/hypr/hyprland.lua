@@ -49,13 +49,14 @@ local menu        = "bash \"${XDG_CONFIG_HOME:-$HOME/.config}/quickshell/susnix/
 -- Autostart necessary processes (like notifications daemons, status bars, etc.)
 -- Or execute your favorite apps at launch like this:
 --
--- hl.on("hyprland.start", function () 
+-- hl.on("hyprland.start", function ()
 --   hl.exec_cmd(terminal)
 --   hl.exec_cmd("nm-applet")
 --   hl.exec_cmd("waybar & hyprpaper & firefox")
 -- end)
 
 hl.on("hyprland.start", function ()
+    hl.exec_cmd("bash \"${XDG_CONFIG_HOME:-$HOME/.config}/susnix/window-controls.sh\"")
     hl.exec_cmd("bash \"${XDG_CONFIG_HOME:-$HOME/.config}/quickshell/susnix/bar.sh\" start")
     hl.exec_cmd("test -c /dev/vboxguest && command -v VBoxClient >/dev/null 2>&1 && VBoxClient --vmsvga-session --session-type wayland")
     hl.exec_cmd("bash \"${XDG_CONFIG_HOME:-$HOME/.config}/susnix/clipboard.sh\" start")
@@ -110,7 +111,7 @@ hl.config({
         -- Susnix applies window border colors from the global shell palette.
 
         -- Set to true to enable resizing windows by clicking and dragging on borders and gaps
-        resize_on_border = false,
+        resize_on_border = true,
 
         -- Please see https://wiki.hypr.land/Configuring/Advanced-and-Cool/Tearing/ before you turn this on
         allow_tearing = false,
@@ -261,6 +262,21 @@ hl.device({
 })
 
 
+-- The VirtualBox absolute tablet keeps host/guest coordinates in sync. Avoid
+-- accelerating its relative fallback, and expensive blur during window moves.
+local productFile = io.open("/sys/class/dmi/id/product_name", "r")
+local productName = productFile and productFile:read("*l") or ""
+if productFile then productFile:close() end
+if productName == "VirtualBox" then
+    for _, deviceName in ipairs({"virtualbox-mouse-integration", "virtualbox-usb-tablet", "imexps/2-generic-explorer-mouse"}) do
+        hl.device({name=deviceName, accel_profile="flat", sensitivity=0})
+    end
+    hl.config({decoration={blur={enabled=false}}})
+    hl.animation({leaf="windows", enabled=true, speed=1.8, bezier="easeOutQuint"})
+    hl.animation({leaf="windowsIn", enabled=true, speed=1.8, bezier="easeOutQuint", style="popin 98%"})
+    hl.animation({leaf="windowsOut", enabled=true, speed=1.5, bezier="easeOutQuint", style="popin 98%"})
+end
+
 ---------------------
 ---- KEYBINDINGS ----
 ---------------------
@@ -336,12 +352,23 @@ local suppressMaximizeRule = hl.window_rule({
 
     suppress_event = "maximize",
 })
--- suppressMaximizeRule:set_enabled(false)
+-- Susnix window controls need native maximize requests to work.
+suppressMaximizeRule:set_enabled(false)
+
+hl.window_rule({
+    name = "susnix-terminal-frame",
+    match = { class = "^susnix-terminal$" },
+    float = true,
+    border_size = 0,
+    rounding = 0,
+})
 
 hl.window_rule({
     name = "susnix-files",
     match = { title = "^Susnix Files$" },
     float = true,
+    border_size = 0,
+    rounding = 0,
 })
 
 hl.window_rule({
@@ -375,3 +402,10 @@ hl.window_rule({
     move  = "20 monitor_h-120",
     float = true,
 })
+
+-- Compact native decorations for third-party windows. Missing plugins are harmless.
+local controlsPath = (os.getenv("XDG_CONFIG_HOME") or os.getenv("HOME") .. "/.config") .. "/hypr/window-controls.lua"
+local controlsConfig = loadfile(controlsPath)
+if controlsConfig then controlsConfig() end
+-- Hyprland minimizes through a special workspace; this reveals hidden windows.
+hl.bind(mainMod .. " + SHIFT + M", hl.dsp.workspace.toggle_special("susnix-minimized"))
