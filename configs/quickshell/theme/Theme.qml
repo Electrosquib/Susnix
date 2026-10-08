@@ -35,6 +35,9 @@ QtObject {
     readonly property int animationFast: ThemeManager.effects.animationFast
     readonly property int animationDropdown: ThemeManager.effects.animationDropdown
     readonly property int animationNormal: ThemeManager.effects.animationNormal
+    // One motion profile for the bar, its dropdowns, and the control center.
+    readonly property int animationReveal: animationFast
+    readonly property int revealEasing: Easing.OutQuart
 
     readonly property color transparent: Qt.alpha(background, 0)
     readonly property color glass: Qt.alpha(background, opacityPanel)

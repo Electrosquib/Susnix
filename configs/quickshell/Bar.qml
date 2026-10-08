@@ -32,11 +32,10 @@ PanelWindow {
     }
     onControlOpenChanged: if (controlOpen) { logo.expanded = false; currentTask.historyOpen = false; }
     readonly property bool controlsRevealed: startupRevealed || pointerRevealed || controlOpen || logo.expanded || currentTask.historyOpen || currentTask.editing
-    onControlsRevealedChanged: if (controlsRevealed) outline.powerOn()
     property real taskReveal: controlsRevealed || currentTask.pinned ? 1 : 0
-    Behavior on taskReveal { NumberAnimation { duration: Theme.animationFast; easing.type: Easing.OutQuart } }
+    Behavior on taskReveal { NumberAnimation { duration: Theme.animationReveal; easing.type: Theme.revealEasing } }
     property real reveal: controlsRevealed ? 1 : 0
-    Behavior on reveal { NumberAnimation { duration: Theme.animationFast; easing.type: Easing.OutQuart } }
+    Behavior on reveal { NumberAnimation { duration: Theme.animationReveal; easing.type: Theme.revealEasing } }
     // Only the top edge accepts input when all controls are collapsed.
     mask: Region {
         Region { x: 0; y: 0; width: panel.width; height: panel.controlsRevealed ? Theme.barSideHeight : 3 }
@@ -68,17 +67,18 @@ PanelWindow {
         margins { top: Theme.barHeight }
         // qmllint enable unqualified unresolved-type
         implicitWidth: Math.min(340, Math.max(1, panel.width*.45))
-        exclusiveZone: 0
+        // Ignore reserved zones; the explicit top margin already accounts for the bar.
         exclusionMode: ExclusionMode.Ignore
         WlrLayershell.namespace: "susnix-control-center"
         WlrLayershell.layer: WlrLayer.Overlay
         WlrLayershell.keyboardFocus: WlrKeyboardFocus.OnDemand
         color: Theme.transparent
-        visible: panel.controlOpen
-        onVisibleChanged: { if (!visible) panel.controlOpen=false; else Qt.callLater(controlCenter.unfoldNow); }
+        visible: panel.controlOpen || controlCenter.openProgress > 0
+        contentItem.clip: true
         ControlCenter {
             id:controlCenter
             anchors.fill:parent
+            opened:panel.controlOpen
             onCloseRequested:panel.controlOpen=false
             onSettingsRequested:panel.toggleThemes()
         }
@@ -108,9 +108,9 @@ PanelWindow {
             onGlitchRequested: outline.triggerGlitch()
             property real openProgress: 0
             function unfoldNow(): void { openProgress = 0; themeUnfold.restart(); }
-            initialization: openProgress
+            opacity: openProgress
             transform: Translate { y: -4 * (1 - themeContent.openProgress) }
-            NumberAnimation { id: themeUnfold; target: themeContent; property: "openProgress"; from: 0; to: 1; duration: Theme.animationFast; easing.type: Easing.OutCubic }
+            NumberAnimation { id: themeUnfold; target: themeContent; property: "openProgress"; from: 0; to: 1; duration: Theme.animationReveal; easing.type: Theme.revealEasing }
         }
     }
 
@@ -136,9 +136,9 @@ PanelWindow {
             onGlitchRequested: outline.triggerGlitch()
             property real openProgress: 0
             function unfoldNow(): void { openProgress = 0; unfold.restart(); }
-            initialization: openProgress
+            opacity: openProgress
             transform: Translate { y: -4 * (1 - history.openProgress) }
-            NumberAnimation { id: unfold; target: history; property: "openProgress"; from: 0; to: 1; duration: Theme.animationFast; easing.type: Easing.OutCubic }
+            NumberAnimation { id: unfold; target: history; property: "openProgress"; from: 0; to: 1; duration: Theme.animationReveal; easing.type: Theme.revealEasing }
         }
     }
 
@@ -199,7 +199,7 @@ PanelWindow {
             anchors.centerIn: parent
             anchors.alignWhenCentered: false
             property real focusExpansion: editing || historyOpen ? 6 : 0
-            Behavior on focusExpansion { NumberAnimation { duration: Theme.animationFast; easing.type: Easing.OutCubic } }
+            Behavior on focusExpansion { NumberAnimation { duration: Theme.animationReveal; easing.type: Theme.revealEasing } }
             width: Math.min(360, panel.width * 0.30) + focusExpansion
         }
     }

@@ -276,19 +276,24 @@ The skyline image itself remains static. These effects support software renderin
 and stop after their short bursts. Set `effects.glowStrength` to 0 to disable
 decorative outline/skyline bursts. No notification system is introduced.
 
-Opening the bar now ignites its edge from the center outward and briefly routes
-energy along short circuit traces. Dropdowns construct their frames from the
-corners and reveal contents behind a downward scan. The control center powers
-its right rail, then initializes each module's outline, dark fill, and content.
-Graph lines trace left-to-right; category resource bars charge to their real
-values; LEDs activate in sequence. These are finite HUD boot passes rather than
-opening glitches. The 150ms panel slide and 220ms boot pass use existing theme
-durations. At rest, translucent semantic gradients and soft static edge
-reflections give the panels a liquid-glass appearance without a repaint loop.
-Graph updates interpolate measured samples over `Theme.animationNormal` while
-hover tooltips retain the original measured values. Unsupported readings stay
-gaps. Theme opening finishes the mouse click and dismisses the previous popup's
-focus grab before opening the palette; the palette keeps the bar revealed.
+All panel reveals now share `Theme.animationReveal` and `Theme.revealEasing`:
+the existing 150ms `animationFast` duration and `OutQuart` easing used when the
+locked top bar retracts. The control center slides as one piece from the right,
+with the same opacity/motion profile, and stays mapped until its close animation
+finishes. Rapid toggles reverse from the current position instead of resetting.
+Dropdowns use the same duration/easing. Opening no longer runs separate scans,
+shards, module boot stages, or whole-bar ignition pulses; glass outlines remain
+static. Resource graphs still interpolate real measurement updates.
+
+The control-center window ignores other panels' reserved zones and uses one
+explicit top margin. Setting `exclusiveZone` was resetting its exclusion mode,
+which counted the top bar twice and started the sidebar at y=72. The correction
+starts it at y=36 and stretches it to the screen bottom, while preserving the
+bar's own 36px reservation. On the live 958x994 monitor, Hyprland reports the
+center at x=618, y=36, width=340, height=958. One bar and one center were verified.
+QML lint, fresh-start/hover/hide tests, and interrupted open/close animation tests
+pass. The latest changes are `Bar.qml`, `components/ControlCenter.qml`,
+`theme/Theme.qml`, and this README; no new files or dependencies were added.
 
 Files changed in this animation/layout pass: `Bar.qml`,
 `components/ControlCenter.qml`, `PanelCard.qml`, `PanelDetails.qml`,
@@ -299,12 +304,12 @@ also changed `shell.qml`, `bar.sh`, and `configs/hypr/hyprland.lua`.
 Offscreen tests checked staged animation phases and settlement, intermediate and
 final graph values, exact right-edge placement beneath the top bar, removed search, palette focus
 handoff/selection/dismiss/reopen, and resource/launcher interactions. All QML
-passes lint. Real compositor input still needs verification in the running VM.
+passes lint. Current geometry has also been verified in the live Hyprland session.
 
 The latest refinement changed `Bar.qml`, `components/ControlCenter.qml`,
 `PerformancePanel.qml`, `HudBootFrame.qml`, and this README. No new dependencies
-or files were added. The independent panel's real layer-shell behavior still
-needs checking in Hyprland; offscreen tests use an ordinary window wrapper and
+or files were added. The independent panel's full-height layer-shell bounds were verified in
+Hyprland; offscreen tests use an ordinary window wrapper and
 verify that theme-button clicks keep the center open, full-height sizing, graph
 refreshes, narrowed resizing, and removed management controls.
 
