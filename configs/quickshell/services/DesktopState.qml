@@ -23,6 +23,7 @@ Item {
         {name:"Videos",path:home,icon:"play",category:"media"}
     ]
     function openFolder(path: string): void {
+        LauncherModel.rememberFile(path,true);
         if (folderPath !== path) { history = history.concat([folderPath]); forwardHistory=[];folderPath = path; }
         filesOpen = true;
         launcherOpen = false;
@@ -42,6 +43,7 @@ Item {
         openFolder(folderPath.slice(0, folderPath.lastIndexOf("/")) || "/");
     }
     function openFile(url: string): void {
+        LauncherModel.rememberFile(decodeURIComponent(url.replace(/^file:\/\//,"")),false);
         // Source/text files remain usable even in the minimal VM before browser
         // and media applications are installed. Core already provides Vim.
         if (/\.(txt|md|json|qml|lua|sh|py|ini|conf|html|css|js|ts|rs|c|h|xml|log|yaml|yml)$/i.test(url)) {

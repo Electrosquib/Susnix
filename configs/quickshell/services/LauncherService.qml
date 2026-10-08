@@ -19,7 +19,7 @@ QtObject {
     }
     function launch(app: var): bool {
         if(!app || !app.command.length) { error="Application is unavailable";return false; }
-        Quickshell.execDetached({command:commandFor(app),workingDirectory:app.workingDirectory});error="";return true;
+        Quickshell.execDetached({command:commandFor(app),workingDirectory:app.workingDirectory});error="";LauncherModel.remember({kind:"app",id:app.id,name:app.name});return true;
     }
     function editFile(path: string): bool {
         const app=entry(["code","codium","org.kde.kate","vim"],"TextEditor");
